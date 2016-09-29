@@ -1,17 +1,37 @@
-#ifndef NODE_H
-#define NODE_H
+#ifndef NEURON_H
+#define NEURON_H
 
-#include <QObject>
+#include <cmath>
 
-class Node : public QObject
-{
-    Q_OBJECT
-public:
-    explicit Node(QObject *parent = 0);
+#include <QList>
 
-signals:
+namespace NN {
 
-public slots:
+using InputVector = QList<long double>;
+
+struct Weight {
+    Weight() = default;
+    Weight(long double weight, long double sigma) : weight{weight}, sigma{sigma} { }
+    long double weight;
+    long double sigma;
 };
 
-#endif // NODE_H
+using NeuronData = QList<Weight>;
+
+class Neuron
+{
+public:
+    Neuron() = default;
+    Neuron(const QList<Weight> *weights);
+
+    long double process(InputVector *inputVector);
+    inline long double getOutput() const { return this->output; }
+
+private:
+    long double output;
+    const QList<Weight> *weights;
+};
+
+}
+
+#endif // NEURON_H

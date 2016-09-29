@@ -1,13 +1,38 @@
-QT += qml quick
+QT += qml quick sql
 
-CONFIG += c++11
+CONFIG += c++14
 
-SOURCES += main.cpp
+SOURCES += \
+    src/main.cpp \
+    src/game/checkersgame.cpp \
+    src/game/move.cpp \
+    src/neuralNetwork/neuralnetwork.cpp \
+    src/engine/abstractengine.cpp \
+    src/engine/neuralnetworkengine.cpp \
+    src/engine/manualplayerengine.cpp \
+    src/game/board.cpp \
+    src/neuralNetwork/neuron.cpp \
+    src/neuralNetwork/neuralnetworkmanager.cpp \
+    src/utilityfunctions.cpp
 
-RESOURCES += qml.qrc
+RESOURCES += \
+    resources.qrc
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
 
 # Default rules for deployment.
 include(deployment.pri)
+
+HEADERS += \
+    src/game/checkersgame.h \
+    src/game/move.h \
+    src/neuralNetwork/neuralnetwork.h \
+    src/engine/abstractengine.h \
+    src/engine/neuralnetworkengine.h \
+    src/engine/manualplayerengine.h \
+    src/game/board.h \
+    src/checkers/piecestype.h \
+    src/neuralNetwork/neuron.h \
+    src/neuralNetwork/neuralnetworkmanager.h \
+    src/utilityfunctions.h

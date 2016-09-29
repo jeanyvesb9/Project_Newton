@@ -3,14 +3,17 @@ import QtQuick.Layouts 1.0
 import Qt.labs.controls 1.0
 
 ApplicationWindow {
+    id: window
     visible: true
-    width: 640
-    height: 480
+    width: 920
+    height: 550
     title: qsTr("Checkers")
+
+    Fonts { id: fonts }
 
     MainView {
         anchors.fill: parent
-
+        fonts: fonts
     }
 
     /*

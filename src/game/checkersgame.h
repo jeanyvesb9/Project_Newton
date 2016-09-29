@@ -2,12 +2,13 @@
 #define CHECKERSGAME_H
 
 #include <QObject>
+#include <QString>
 
 class CheckersGame : public QObject
 {
     Q_OBJECT
 public:
-    explicit CheckersGame(QObject *parent = 0);
+    CheckersGame(QObject *parent = 0);
 
 signals:
 
