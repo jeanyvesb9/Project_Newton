@@ -5,7 +5,6 @@ CONFIG += c++14
 SOURCES += \
     src/main.cpp \
     src/game/checkersgame.cpp \
-    src/game/move.cpp \
     src/neuralNetwork/neuralnetwork.cpp \
     src/engine/abstractengine.cpp \
     src/engine/neuralnetworkengine.cpp \
@@ -27,15 +26,14 @@ include(deployment.pri)
 
 HEADERS += \
     src/game/checkersgame.h \
-    src/game/move.h \
     src/neuralNetwork/neuralnetwork.h \
     src/engine/abstractengine.h \
     src/engine/neuralnetworkengine.h \
     src/engine/manualplayerengine.h \
     src/game/board.h \
-    src/checkers/piecestype.h \
     src/neuralNetwork/neuron.h \
     src/neuralNetwork/neuralnetworkmanager.h \
     src/utilityfunctions.h \
     src/training/trainingengine.h \
-    src/training/trainingstructs.h
+    src/training/trainingstructs.h \
+    src/game/gamestructs.h

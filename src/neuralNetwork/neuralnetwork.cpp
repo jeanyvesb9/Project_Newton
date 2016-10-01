@@ -65,7 +65,7 @@ NeuralNetwork::~NeuralNetwork()
 
 }
 
-long double NeuralNetwork::processBoard(Checkers::BoardVector &board)
+long double NeuralNetwork::processBoard(Game::BoardVector &board)
 {
     InputVector boardInput = createInputVector(board);
     InputVector layerInput;
@@ -163,26 +163,26 @@ NeuralNetworkPointer NeuralNetwork::createGenerationZeroNN(InternalTopology *top
     return NeuralNetworkPointer(new NeuralNetwork(NNData));
 }
 
-InputVector NeuralNetwork::createInputVector(const Checkers::BoardVector &boardVector) const
+InputVector NeuralNetwork::createInputVector(const Game::BoardVector &boardVector) const
 {
     InputVector ret;
     for(const auto &element : boardVector)
     {
         switch(element)
         {
-        case Checkers::Places::OpKing:
+        case Game::Places::OpKing:
             ret.append(- this->data->king);
             break;
-        case Checkers::Places::OpPlayer:
+        case Game::Places::OpPlayer:
             ret.append(-1.0);
             break;
-        case Checkers::Places::Empty:
+        case Game::Places::Empty:
             ret.append(0);
             break;
-        case Checkers::Places::Player:
+        case Game::Places::Player:
             ret.append(1.0);
             break;
-        case Checkers::Places::King:
+        case Game::Places::King:
             ret.append(this->data->king);
             break;
         }

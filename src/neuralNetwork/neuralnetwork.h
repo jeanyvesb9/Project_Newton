@@ -11,7 +11,7 @@
 #include <QDebug>
 
 #include "src/neuralNetwork/neuron.h"
-#include "src/checkers/piecestype.h"
+#include "src/game/gamestructs.h"
 
 namespace NN {
 
@@ -38,7 +38,7 @@ public:
     NeuralNetwork(NNTopologyDataPointer data, QObject *parent = 0);
     ~NeuralNetwork();
 
-    long double processBoard(Checkers::BoardVector &board);
+    long double processBoard(Game::BoardVector &board);
 
     NeuralNetworkPointer createChild() const;
 
@@ -53,7 +53,7 @@ private:
     Neuron outputNeuron;
     QList<Weight> outputNeuronWeights;
 
-    InputVector createInputVector(const Checkers::BoardVector &boardVector) const;
+    InputVector createInputVector(const Game::BoardVector &boardVector) const;
 
 };
 

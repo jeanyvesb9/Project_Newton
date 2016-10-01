@@ -17,7 +17,8 @@ int main(int argc, char *argv[])
 
     NN::InternalTopology topology = {40, 10};
 
-    NN::NeuralNetworkManagerPointer manager(new NN::NeuralNetworkManager("/Users/jeanyves/Desktop/QT/Project_Newton/database_models/neuralNetwork_test.db"));
+    NN::NeuralNetworkManagerPointer manager = NN::NeuralNetworkManager::createNewNNFamily("/Users/jeanyves/Desktop/QT/Project_Newton/database_models/neuralNetwork_test.db", topology);
+    //NN::NeuralNetworkManagerPointer manager(new NN::NeuralNetworkManager("/Users/jeanyves/Desktop/QT/Project_Newton/database_models/neuralNetwork_test.db"));
     qDebug() <<"Done";
     return app.exec();
 }

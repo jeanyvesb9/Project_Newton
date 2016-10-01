@@ -3,10 +3,14 @@
 
 #include <QObject>
 #include <QList>
+#include <QSharedPointer>
 
-#include "src/checkers/piecestype.h"
+#include "src/game/gamestructs.h"
 
 namespace Game {
+
+class Board;
+using BoardPointer = QSharedPointer<Board>;
 
 class Board : public QObject
 {
@@ -14,10 +18,12 @@ class Board : public QObject
 public:
     Board(QObject *parent = 0);
 
-    //static defaultBoard
+
+
+    static BoardPointer defaultBoard();
 
 private:
-    QList<Checkers::Places> boardDiagram;
+    Game::BoardVector boardDiagram;
 
 signals:
 
