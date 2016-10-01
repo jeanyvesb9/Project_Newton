@@ -13,7 +13,8 @@ SOURCES += \
     src/game/board.cpp \
     src/neuralNetwork/neuron.cpp \
     src/neuralNetwork/neuralnetworkmanager.cpp \
-    src/utilityfunctions.cpp
+    src/utilityfunctions.cpp \
+    src/training/trainingengine.cpp
 
 RESOURCES += \
     resources.qrc
@@ -35,4 +36,6 @@ HEADERS += \
     src/checkers/piecestype.h \
     src/neuralNetwork/neuron.h \
     src/neuralNetwork/neuralnetworkmanager.h \
-    src/utilityfunctions.h
+    src/utilityfunctions.h \
+    src/training/trainingengine.h \
+    src/training/trainingstructs.h

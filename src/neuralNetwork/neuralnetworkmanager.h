@@ -6,28 +6,20 @@
 #include <QSharedPointer>
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QDateTime>
 #include <exception> //TODO: HANDLE BAD FILES!! (PERMISSIONS/OPENING OR FORMAT[DB ERROR])
 
 #include "src/neuralNetwork/neuralnetwork.h"
+#include "src/training/trainingstructs.h"
 
 #include "src/utilityfunctions.h"
 
 namespace NN {
 
-struct NNContainer {
-    NeuralNetworkPointer neuralNetwork;
-    quint64 id;
-    quint64 parent;
-    qint64 generation;
-    bool active;
-    quint64 dateCreated;
-};
-using NNContainerPointer = QSharedPointer<NNContainer>;
+enum NNManagerFlags { valid = 1, corruptFile = 2 };
 
 class NeuralNetworkManager;
 using NeuralNetworkManagerPointer = QSharedPointer<NeuralNetworkManager>;
-
-enum NNManagerFlags { valid = 1, corruptFile = 2 };
 
 class NeuralNetworkManager : public QObject
 {
@@ -41,14 +33,23 @@ public:
     inline bool isFlagActive(NNManagerFlags flag) const { return flags & flag; }
     inline unsigned int getFlags() const { return flags; }
 
-    static NeuralNetworkManagerPointer createNewNNFamily(QString file, InternalTopology *topology);
+    bool updateNNActiveStatusToDB(NNContainerPointer nn);
+    inline QVector<NNContainerPointer>* getActiveNNVector() { return &activeNeuralNetworks; }
+
+    quint64 getNumberOfGenerations() const; //Returns number of gens INCLUDING GEN 0!
+    quint64 getTrainingInterations() const;
+    bool addTrainingIteration(TrainingDataPointer trainingData);
+
+    NNContainerPointer getBestNNPerformer();
+
+    static NeuralNetworkManagerPointer createNewNNFamily(QString file, InternalTopology topology);
 
 private:
     QSqlDatabase db;
     unsigned int flags;
 
     InternalTopology topology;
-    QVector<NNContainerPointer> neuralNetworks;
+    QVector<NNContainerPointer> activeNeuralNetworks;
 
     NNContainerPointer loadNNfromQuery(QSqlQuery *query) const;
     bool loadInMemory();

@@ -3,7 +3,7 @@
 using namespace NN;
 
 NNTopologyData::NNTopologyData(QVector<long double> *rawWeightsSigmas, const InternalTopology *topology, long double king)
-    :king{king}, Nw{0}
+    :Nw{0}, king{king}
 {
     unsigned int rawIndex = 0;
     for(int i = 0; i < topology->size(); i++) //Layer
@@ -124,7 +124,7 @@ NeuralNetworkPointer NeuralNetwork::createChild() const
     return NeuralNetworkPointer(new NeuralNetwork(NNData));
 }
 
-NeuralNetworkPointer NeuralNetwork::createGenrationZeroNN(InternalTopology *topology)
+NeuralNetworkPointer NeuralNetwork::createGenerationZeroNN(InternalTopology *topology)
 {
     NNTopologyDataPointer NNData = NNTopologyDataPointer(new NNTopologyData());
     NNData->king = 2.0; //King default value

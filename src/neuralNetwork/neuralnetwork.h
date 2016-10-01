@@ -41,7 +41,8 @@ public:
     long double processBoard(Checkers::BoardVector &board);
 
     NeuralNetworkPointer createChild() const;
-    static NeuralNetworkPointer createGenrationZeroNN(InternalTopology *topology);
+
+    static NeuralNetworkPointer createGenerationZeroNN(InternalTopology *topology);
 
     inline NNTopologyDataPointer getDataStruct() const { return this->data; }
 
@@ -55,6 +56,16 @@ private:
     InputVector createInputVector(const Checkers::BoardVector &boardVector) const;
 
 };
+
+struct NNContainer {
+    NeuralNetworkPointer neuralNetwork;
+    quint64 id;
+    quint64 parent;
+    quint64 generation;
+    bool active;
+    qint64 dateCreated;
+};
+using NNContainerPointer = QSharedPointer<NNContainer>;
 
 }
 
