@@ -38,7 +38,7 @@ public:
     NeuralNetwork(NNTopologyDataPointer data, QObject *parent = 0);
     ~NeuralNetwork();
 
-    long double processBoard(Game::BoardVector &board);
+    long double processBoard(Game::BoardData &board);
 
     NeuralNetworkPointer createChild() const;
 
@@ -53,7 +53,7 @@ private:
     Neuron outputNeuron;
     QList<Weight> outputNeuronWeights;
 
-    InputVector createInputVector(const Game::BoardVector &boardVector) const;
+    InputVector createInputVector(const Game::BoardData &boardVector) const;
 
 };
 

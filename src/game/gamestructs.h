@@ -3,14 +3,15 @@
 
 #include <QVector>
 #include <QtGlobal>
+#include <QSharedPointer>
 
 namespace Game {
 
-enum class Places { OpKing, OpPlayer, Empty, Player, King };
-using BoardVector = QVector<Places>;
+enum class Pieces { OpKing, OpPlayer, Empty, Player, King };
+using BoardData = QVector<Pieces>;
 
 struct Cell {
-    inline Cell() : column{-1}, row{-1} {};
+    Cell() = default;
     inline Cell(qint8 column, qint8 row) : column{column}, row{row} {};
     qint8 column;
     qint8 row;
@@ -18,11 +19,17 @@ struct Cell {
 
 enum class DirectionToken { FRight, FLeft, BRight, BLeft, JFRight, JFLeft, JBRight, JBLeft };
 
+struct Move;
+using MovePointer = QSharedPointer<Move>;
+
 struct Move {
+    Move() = default;
+    inline Move(Cell cell, DirectionToken dir, MovePointer concat = MovePointer()) : cell{cell}, direction{dir}, concatenatedMove{concat} {};
     Cell cell;
     DirectionToken direction;
-    Cell concatenatedMove;
+    MovePointer concatenatedMove;
 };
+
 
 }
 

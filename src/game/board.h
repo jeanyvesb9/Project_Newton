@@ -2,12 +2,14 @@
 #define BOARD_H
 
 #include <QObject>
-#include <QList>
+#include <QVector>
 #include <QSharedPointer>
 
 #include "src/game/gamestructs.h"
 
 namespace Game {
+
+enum class MoveValidity { Valid, Invalid, CanContinue};
 
 class Board;
 using BoardPointer = QSharedPointer<Board>;
@@ -16,18 +18,18 @@ class Board : public QObject
 {
     Q_OBJECT
 public:
-    Board(QObject *parent = 0);
+    Board(BoardData data, QObject *parent = 0);
 
+    MoveValidity isMoveValid(MovePointer move) const;
+    QVector<MovePointer> getAllMoves(Cell cell, bool allowSingleJumps = false, bool onlyJumps = false) const; //allowSingleJumps allows for single jump in multiple jump context
+    BoardPointer executeMove(MovePointer move) const;
 
+    BoardPointer treeBranchGenerator() const;
 
     static BoardPointer defaultBoard();
 
 private:
-    Game::BoardVector boardDiagram;
-
-signals:
-
-public slots:
+    BoardData data;
 };
 
 }
