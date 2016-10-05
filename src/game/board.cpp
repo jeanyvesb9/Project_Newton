@@ -9,7 +9,7 @@ Board::Board(BoardData data, QObject *parent)
 
 }
 
-MoveValidity Board::isMoveValid(MovePointer move) const
+MoveValidity Board::isMoveValid(MovePointer move, bool allowSingleJumps) const
 {
     quint8 cell = move->cell.row * 4 + move->cell.column;
     Pieces piece = data.at(cell);

@@ -20,7 +20,7 @@ class Board : public QObject
 public:
     Board(BoardData data, QObject *parent = 0);
 
-    MoveValidity isMoveValid(MovePointer move) const;
+    MoveValidity isMoveValid(MovePointer move, bool allowSingleJumps = false) const; //allowSingleJumps allows for single jump in multiple jump context
     QVector<MovePointer> getAllMoves(Cell cell, bool allowSingleJumps = false, bool onlyJumps = false) const; //allowSingleJumps allows for single jump in multiple jump context
     BoardPointer executeMove(MovePointer move) const;
 
