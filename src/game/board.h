@@ -9,7 +9,7 @@
 
 namespace Game {
 
-enum class MoveValidity { Valid, Invalid, CanContinue};
+enum class MoveValidity { Valid, Invalid };
 
 class Board;
 using BoardPointer = QSharedPointer<Board>;
@@ -20,7 +20,7 @@ class Board : public QObject
 public:
     Board(BoardData data, QObject *parent = 0);
 
-    MoveValidity isMoveValid(MovePointer move, bool allowSingleJumps = false) const; //allowSingleJumps allows for single jump in multiple jump context
+    MoveValidity isMoveValid(MovePointer move) const;
     QVector<MovePointer> getAllMoves(Cell cell, bool allowSingleJumps = false, bool onlyJumps = false) const; //allowSingleJumps allows for single jump in multiple jump context
     BoardPointer executeMove(MovePointer move) const;
 

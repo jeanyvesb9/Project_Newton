@@ -9,25 +9,371 @@ Board::Board(BoardData data, QObject *parent)
 
 }
 
-MoveValidity Board::isMoveValid(MovePointer move, bool allowSingleJumps) const
+MoveValidity Board::isMoveValid(MovePointer move) const
 {
-    quint8 cell = move->cell.row * 4 + move->cell.column;
-    Pieces piece = data.at(cell);
+    Cell &cell = move->cell;
+    quint8 cellNum = cell.row * 4 + cell.column;
+    const Pieces piece = data.at(cellNum);
 
     if(piece == Pieces::Empty)
         return MoveValidity::Invalid;
-    if(piece == Pieces::OpPlayer || piece == Pieces::OpKing)
-    {
 
+    switch(move->direction)
+    {
+    case DirectionToken::FLeft:
+        if((piece == Pieces::OpPlayer || piece == Pieces::OpKing) && cell.row != 7)
+        {
+            if(!(cell.row % 2) && data.at(cellNum + 4) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+            else if(cell.column != 3 && data.at(cellNum + 5) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+        }
+        else if((piece == Pieces::Player || piece == Pieces::King) && cell.row != 0)
+        {
+            if(!(cell.row % 2) && cell.column != 0 && data.at(cellNum - 5) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+            else if(data.at(cellNum - 4) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+        }
+        break;
+
+    case DirectionToken::FRight:
+        if((piece == Pieces::OpPlayer || piece == Pieces::OpKing) && cell.row != 7)
+        {
+            if(!(cell.row % 2) && cell.column != 0 && data.at(cellNum + 3) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+            else if(data.at(cellNum + 4) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+        }
+        else if((piece == Pieces::Player || piece == Pieces::King) && cell.row != 0)
+        {
+            if(!(cell.row % 2) && data.at(cellNum - 4) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+            else if(cell.column != 3 && data.at(cellNum - 3) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+        }
+        break;
+
+    case DirectionToken::BLeft:
+        if(piece == Pieces::OpKing && cell.row != 0)
+        {
+            if(!(cell.row % 2) && data.at(cellNum - 4) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+            else if(cell.column != 3 && data.at(cellNum - 3) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+        }
+        else if(piece == Pieces::King && cell.row != 7)
+        {
+            if(!(cell.row % 2) && cell.column != 0 && data.at(cellNum + 3) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+            else if(data.at(cellNum + 4) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+        }
+        break;
+
+    case DirectionToken::BRight:
+        if(piece == Pieces::OpKing && cell.row != 0)
+        {
+            if(!(cell.row % 2) && cell.column != 0 && data.at(cellNum - 5) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+            else if(data.at(cellNum - 4) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+        }
+        else if(piece == Pieces::King && cell.row != 7)
+        {
+            if(!(cell.row % 2) && data.at(cellNum + 4) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+            else if(cell.column != 3 && data.at(cellNum + 5) == Pieces::Empty)
+            {
+                return MoveValidity::Valid;
+            }
+        }
+        break;
+
+    case DirectionToken::JFLeft:
+        if((piece == Pieces::OpPlayer || piece == Pieces::OpKing) && cell.row < 6 && cell.column != 3)
+        {
+            if(!(cell.row % 2) && (data.at(cellNum + 4) == Pieces::Player || data.at(cellNum + 4) == Pieces::King)
+                    && data.at(cellNum + 9) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                else if(move->direction == DirectionToken::JFLeft || move->direction == DirectionToken::JFRight
+                        || piece == Pieces::OpKing && move->direction == DirectionToken::JBLeft
+                        || piece == Pieces::OpKing && move->direction == DirectionToken::JBRight)
+                {
+                    MovePointer newMove(new Move(cell, DirectionToken::JFLeft));
+                    BoardPointer childBoard = this->executeMove(newMove);
+                    return childBoard->isMoveValid(move->concatenatedMove);
+                }
+            }
+            else if((data.at(cellNum + 5) == Pieces::Player || data.at(cellNum + 5) == Pieces::King)
+                    && data.at(cellNum + 9) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                else if(move->direction == DirectionToken::JFLeft || move->direction == DirectionToken::JFRight
+                        || piece == Pieces::OpKing && move->direction == DirectionToken::JBLeft
+                        || piece == Pieces::OpKing && move->direction == DirectionToken::JBRight)
+                {
+                    MovePointer newMove(new Move(cell, DirectionToken::JFLeft));
+                    BoardPointer childBoard = this->executeMove(newMove);
+                    return childBoard->isMoveValid(move->concatenatedMove);
+                }
+            }
+        }
+        else if((piece == Pieces::Player || piece == Pieces::King) && cell.row > 1 && cell.column != 0)
+        {
+            if(!(cell.row % 2) && (data.at(cellNum - 5) == Pieces::OpPlayer || data.at(cellNum - 5) == Pieces::OpKing)
+                    && data.at(cellNum - 9) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                else if(move->direction == DirectionToken::JFLeft || move->direction == DirectionToken::JFRight
+                        || piece == Pieces::King && move->direction == DirectionToken::JBLeft
+                        || piece == Pieces::King && move->direction == DirectionToken::JBRight)
+                {
+                    MovePointer newMove(new Move(cell, DirectionToken::JFLeft));
+                    BoardPointer childBoard = this->executeMove(newMove);
+                    return childBoard->isMoveValid(move->concatenatedMove);
+                }
+            }
+            else if((data.at(cellNum - 4) == Pieces::OpPlayer || data.at(cellNum - 4) == Pieces::OpKing)
+                    && data.at(cellNum - 9) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                else if(move->direction == DirectionToken::JFLeft || move->direction == DirectionToken::JFRight
+                        || piece == Pieces::King && move->direction == DirectionToken::JBLeft
+                        || piece == Pieces::King && move->direction == DirectionToken::JBRight)
+                {
+                    MovePointer newMove(new Move(cell, DirectionToken::JFLeft));
+                    BoardPointer childBoard = this->executeMove(newMove);
+                    return childBoard->isMoveValid(move->concatenatedMove);
+                }
+            }
+        }
+        break;
+
+    case DirectionToken::JFRight:
+        if((piece == Pieces::OpPlayer || piece == Pieces::OpKing) && cell.row < 6 && cell.column != 0)
+        {
+            if(!(cell.row % 2) && (data.at(cellNum + 3) == Pieces::Player || data.at(cellNum + 3) == Pieces::King)
+                    && data.at(cellNum + 7) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                else if(move->direction == DirectionToken::JFLeft || move->direction == DirectionToken::JFRight
+                        || piece == Pieces::OpKing && move->direction == DirectionToken::JBLeft
+                        || piece == Pieces::OpKing && move->direction == DirectionToken::JBRight)
+                {
+                    MovePointer newMove(new Move(cell, DirectionToken::JFRight));
+                    BoardPointer childBoard = this->executeMove(newMove);
+                    return childBoard->isMoveValid(move->concatenatedMove);
+                }
+            }
+            else if((data.at(cellNum + 4) == Pieces::Player || data.at(cellNum + 4) == Pieces::King)
+                    && data.at(cellNum + 7) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                else if(move->direction == DirectionToken::JFLeft || move->direction == DirectionToken::JFRight
+                        || piece == Pieces::OpKing && move->direction == DirectionToken::JBLeft
+                        || piece == Pieces::OpKing && move->direction == DirectionToken::JBRight)
+                {
+                    MovePointer newMove(new Move(cell, DirectionToken::JFRight));
+                    BoardPointer childBoard = this->executeMove(newMove);
+                    return childBoard->isMoveValid(move->concatenatedMove);
+                }
+            }
+        }
+        else if((piece == Pieces::Player || piece == Pieces::King) && cell.row > 1 && cell.column != 3)
+        {
+            if(!(cell.row % 2) && (data.at(cellNum - 4) == Pieces::OpPlayer || data.at(cellNum - 4) == Pieces::OpKing)
+                    && data.at(cellNum - 7) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                else if(move->direction == DirectionToken::JFLeft || move->direction == DirectionToken::JFRight
+                        || piece == Pieces::King && move->direction == DirectionToken::JBLeft
+                        || piece == Pieces::King && move->direction == DirectionToken::JBRight)
+                {
+                    MovePointer newMove(new Move(cell, DirectionToken::JFRight));
+                    BoardPointer childBoard = this->executeMove(newMove);
+                    return childBoard->isMoveValid(move->concatenatedMove);
+                }
+            }
+            else if((data.at(cellNum - 3) == Pieces::OpPlayer || data.at(cellNum - 3) == Pieces::OpKing)
+                    && data.at(cellNum - 7) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                else if(move->direction == DirectionToken::JFLeft || move->direction == DirectionToken::JFRight
+                        || piece == Pieces::King && move->direction == DirectionToken::JBLeft
+                        || piece == Pieces::King && move->direction == DirectionToken::JBRight)
+                {
+                    MovePointer newMove(new Move(cell, DirectionToken::JFRight));
+                    BoardPointer childBoard = this->executeMove(newMove);
+                    return childBoard->isMoveValid(move->concatenatedMove);
+                }
+            }
+        }
+        break;
+
+    case DirectionToken::JBLeft:
+        if(piece == Pieces::OpKing && cell.row > 1 && cell.column != 3)
+        {
+            if(!(cell.row % 2) && (data.at(cellNum - 4) == Pieces::Player || data.at(cellNum - 4) == Pieces::King)
+                    && data.at(cellNum - 7) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                MovePointer newMove(new Move(cell, DirectionToken::JBLeft));
+                BoardPointer childBoard = this->executeMove(newMove);
+                return childBoard->isMoveValid(move->concatenatedMove);
+            }
+            else if((data.at(cellNum - 3) == Pieces::Player || data.at(cellNum - 3) == Pieces::King)
+                    && data.at(cellNum - 7) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                MovePointer newMove(new Move(cell, DirectionToken::JBLeft));
+                BoardPointer childBoard = this->executeMove(newMove);
+                return childBoard->isMoveValid(move->concatenatedMove);
+            }
+        }
+        else if(piece == Pieces::King && cell.row < 6 && cell.column != 0)
+        {
+            if(!(cell.row % 2) && (data.at(cellNum + 3) == Pieces::OpPlayer || data.at(cellNum + 3) == Pieces::OpKing)
+                    && data.at(cellNum + 7) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                MovePointer newMove(new Move(cell, DirectionToken::JBLeft));
+                BoardPointer childBoard = this->executeMove(newMove);
+                return childBoard->isMoveValid(move->concatenatedMove);
+            }
+            else if((data.at(cellNum + 4) == Pieces::OpPlayer || data.at(cellNum + 4) == Pieces::OpKing)
+                    && data.at(cellNum + 7) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                MovePointer newMove(new Move(cell, DirectionToken::JBLeft));
+                BoardPointer childBoard = this->executeMove(newMove);
+                return childBoard->isMoveValid(move->concatenatedMove);
+            }
+        }
+        break;
+
+    case DirectionToken::JBRight:
+        if(piece == Pieces::OpKing && cell.row > 1 && cell.column != 0)
+        {
+            if(!(cell.row % 2) && (data.at(cellNum - 5) == Pieces::Player || data.at(cellNum - 5) == Pieces::King)
+                    && data.at(cellNum - 9) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                MovePointer newMove(new Move(cell, DirectionToken::JBRight));
+                BoardPointer childBoard = this->executeMove(newMove);
+                return childBoard->isMoveValid(move->concatenatedMove);
+            }
+            else if((data.at(cellNum - 4) == Pieces::Player || data.at(cellNum - 4) == Pieces::King)
+                    && data.at(cellNum - 9) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                MovePointer newMove(new Move(cell, DirectionToken::JBRight));
+                BoardPointer childBoard = this->executeMove(newMove);
+                return childBoard->isMoveValid(move->concatenatedMove);
+            }
+        }
+        else if(piece == Pieces::King && cell.row < 6 && cell.column != 3)
+        {
+            if(!(cell.row % 2) && (data.at(cellNum + 4) == Pieces::OpPlayer || data.at(cellNum + 4) == Pieces::OpKing)
+                    && data.at(cellNum + 9) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                MovePointer newMove(new Move(cell, DirectionToken::JBRight));
+                BoardPointer childBoard = this->executeMove(newMove);
+                return childBoard->isMoveValid(move->concatenatedMove);
+            }
+            else if((data.at(cellNum + 5) == Pieces::OpPlayer || data.at(cellNum + 5) == Pieces::OpKing)
+                    && data.at(cellNum + 9) == Pieces::Empty)
+            {
+                if(move->concatenatedMove.isNull())
+                {
+                    return MoveValidity::Valid;
+                }
+                MovePointer newMove(new Move(cell, DirectionToken::JBRight));
+                BoardPointer childBoard = this->executeMove(newMove);
+                return childBoard->isMoveValid(move->concatenatedMove);
+            }
+        }
+        break;
     }
 
-
-
-
-
-
-
-
+    return MoveValidity::Invalid;
 }
 
 QVector<MovePointer> Board::getAllMoves(Cell cell, bool allowSingleJumps, bool onlyJumps) const
@@ -40,210 +386,7 @@ QVector<MovePointer> Board::getAllMoves(Cell cell, bool allowSingleJumps, bool o
     if(piece == Pieces::Empty)
         return moves;
 
-    if((piece == Pieces::OpPlayer || piece == Pieces::OpKing) && cell.row != 7)
-    {
-        if(!cell.row % 2)
-        {
-            if(data.at(cellNum + 4) == Pieces::Empty)
-            {
-                moves << MovePointer(new Move(cell, DirectionToken::FLeft));
-            }
-            else if((data.at(cellNum + 4) == Pieces::Player || data.at(cellNum + 4) == Pieces::King)
-                    && data.at(cellNum + 9) == Pieces::Empty)
-            {
-                MovePointer move(new Move(cell, DirectionToken::JFLeft));
-                if(!allowSingleJumps)
-                {
-                    BoardPointer childBoard = this->executeMove(move);
-                    childBoard->getAllMoves();
-                }
 
-            }
-
-            if(cell.column != 0)
-            {
-                if(data.at(cellNum + 3) == Pieces::Empty)
-                {
-                    moves << MovePointer(new Move(cell, DirectionToken::FRight));
-                }
-                else if(data.at(cellNum + 3) == Pieces::Player || data.at(cellNum + 3) == Pieces::King)
-                {
-                    //USE RECURSIVE FOR JUMPS
-                }
-            }
-        }
-        else
-        {
-            if(data.at(cellNum + 4) == Pieces::Empty)
-            {
-                moves << MovePointer(new Move(cell, DirectionToken::FRight));
-            }
-            else if(data.at(cellNum + 4) == Pieces::Player || data.at(cellNum + 4) == Pieces::King)
-            {
-                //USE RECURSIVE FOR JUMPS
-            }
-
-            if(cell.column != 3)
-            {
-                if(data.at(cellNum + 5) == Pieces::Empty)
-                {
-                    moves << MovePointer(new Move(cell, DirectionToken::FLeft));
-                }
-                else if(data.at(cellNum + 5) == Pieces::Player || data.at(cellNum + 5) == Pieces::King)
-                {
-                    //USE RECURSIVE FOR JUMPS
-                }
-            }
-        }
-    }
-    if(piece == Pieces::OpKing && cell.row != 0)
-    {
-        if(!cell.row % 2)
-        {
-            if(data.at(cellNum - 4) == Pieces::Empty)
-            {
-                moves << MovePointer(new Move(cell, DirectionToken::BLeft));
-            }
-            else if(data.at(cellNum - 4) == Pieces::Player || data.at(cellNum - 4) == Pieces::King)
-            {
-                //USE RECURSIVE FOR JUMPS
-            }
-
-            if(cell.column != 0)
-            {
-                if(data.at(cellNum - 5) == Pieces::Empty)
-                {
-                    moves << MovePointer(new Move(cell, DirectionToken::BRight));
-                }
-                else if(data.at(cellNum - 5) == Pieces::Player || data.at(cellNum - 5) == Pieces::King)
-                {
-                    //USE RECURSIVE FOR JUMPS
-                }
-            }
-        }
-        else
-        {
-            if(data.at(cellNum - 4) == Pieces::Empty)
-            {
-                moves << MovePointer(new Move(cell, DirectionToken::BRight));
-            }
-            else if(data.at(cellNum - 4) == Pieces::Player || data.at(cellNum - 4) == Pieces::King)
-            {
-                //USE RECURSIVE FOR JUMPS
-            }
-
-            if(cell.column != 3)
-            {
-                if(data.at(cellNum - 3) == Pieces::Empty)
-                {
-                    moves << MovePointer(new Move(cell, DirectionToken::BLeft));
-                }
-                else if(data.at(cellNum - 3) == Pieces::Player || data.at(cellNum - 3) == Pieces::King)
-                {
-                    //USE RECURSIVE FOR JUMPS
-                }
-            }
-        }
-    }
-
-    if((piece == Pieces::Player || piece == Pieces::King) && cell.row != 0)
-    {
-        if(!cell.row % 2)
-        {
-            if(data.at(cellNum - 4) == Pieces::Empty)
-            {
-                moves << MovePointer(new Move(cell, DirectionToken::FRight));
-            }
-            else if(data.at(cellNum - 4) == Pieces::OpPlayer || data.at(cellNum - 4) == Pieces::OpKing)
-            {
-                //USE RECURSIVE FOR JUMPS
-            }
-
-            if(cell.column != 0)
-            {
-                if(data.at(cellNum - 5) == Pieces::Empty)
-                {
-                    moves << MovePointer(new Move(cell, DirectionToken::FLeft));
-                }
-                else if(data.at(cellNum - 5) == Pieces::OpPlayer || data.at(cellNum - 5) == Pieces::OpKing)
-                {
-                    //USE RECURSIVE FOR JUMPS
-                }
-            }
-        }
-        else
-        {
-            if(data.at(cellNum - 4) == Pieces::Empty)
-            {
-                moves << MovePointer(new Move(cell, DirectionToken::FLeft));
-            }
-            else if(data.at(cellNum - 4) == Pieces::OpPlayer || data.at(cellNum - 4) == Pieces::OpKing)
-            {
-                //USE RECURSIVE FOR JUMPS
-            }
-
-            if(cell.column != 3)
-            {
-                if(data.at(cellNum - 3) == Pieces::Empty)
-                {
-                    moves << MovePointer(new Move(cell, DirectionToken::FRight));
-                }
-                else if(data.at(cellNum - 3) == Pieces::OpPlayer || data.at(cellNum - 3) == Pieces::OpKing)
-                {
-                    //USE RECURSIVE FOR JUMPS
-                }
-            }
-        }
-    }
-    if(piece == Pieces::King && cell.row != 7)
-    {
-        if(!cell.row % 2)
-        {
-            if(data.at(cellNum + 4) == Pieces::Empty)
-            {
-                moves << MovePointer(new Move(cell, DirectionToken::BRight));
-            }
-            else if(data.at(cellNum + 4) == Pieces::OpPlayer || data.at(cellNum + 4) == Pieces::OpKing)
-            {
-                //USE RECURSIVE FOR JUMPS
-            }
-
-            if(cell.column != 0)
-            {
-                if(data.at(cellNum + 3) == Pieces::Empty)
-                {
-                    moves << MovePointer(new Move(cell, DirectionToken::BLeft));
-                }
-                else if(data.at(cellNum + 3) == Pieces::OpPlayer || data.at(cellNum + 3) == Pieces::OpKing)
-                {
-                    //USE RECURSIVE FOR JUMPS
-                }
-            }
-        }
-        else
-        {
-            if(data.at(cellNum + 4) == Pieces::Empty)
-            {
-                moves << MovePointer(new Move(cell, DirectionToken::BLeft));
-            }
-            else if(data.at(cellNum + 4) == Pieces::OpPlayer || data.at(cellNum + 4) == Pieces::OpKing)
-            {
-                //USE RECURSIVE FOR JUMPS
-            }
-
-            if(cell.column != 3)
-            {
-                if(data.at(cellNum + 5) == Pieces::Empty)
-                {
-                    moves << MovePointer(new Move(cell, DirectionToken::BRight));
-                }
-                else if(data.at(cellNum + 5) == Pieces::OpPlayer || data.at(cellNum + 5) == Pieces::OpKing)
-                {
-                    //USE RECURSIVE FOR JUMPS
-                }
-            }
-        }
-    }
 
     if(onlyJumps)
     {
@@ -258,12 +401,12 @@ QVector<MovePointer> Board::getAllMoves(Cell cell, bool allowSingleJumps, bool o
 
 BoardPointer Board::executeMove(MovePointer move) const
 {
-
+    return BoardPointer();
 }
 
 BoardPointer Board::treeBranchGenerator() const
 {
-
+    return BoardPointer();
 }
 
 BoardPointer Board::defaultBoard()
