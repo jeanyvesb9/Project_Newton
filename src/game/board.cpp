@@ -376,6 +376,15 @@ MoveValidity Board::isMoveValid(MovePointer move) const
     return MoveValidity::Invalid;
 }
 
+MovePointer Board::continueJump(MovePointer move) const
+{
+    if(!(move->direction == DirectionToken::JFLeft || move->direction == DirectionToken::JFRight
+            || move->direction == DirectionToken::JBLeft || move->direction == DirectionToken::JBRight))
+    {
+
+    }
+}
+
 QVector<MovePointer> Board::getAllMoves(Cell cell, bool allowSingleJumps, bool onlyJumps) const
 {
     quint8 cellNum = cell.row * 4 + cell.column;
