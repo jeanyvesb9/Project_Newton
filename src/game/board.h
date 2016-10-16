@@ -16,6 +16,13 @@ class newCellException {};
 
 enum class MoveValidity { Valid, Invalid };
 
+struct BoardModification
+{
+    CellPointer crownedCell;
+    QVector<Cell> removedCells;
+};
+using BoardModificationPointer = QSharedPointer<BoardModification>;
+
 class Board;
 using BoardPointer = QSharedPointer<Board>;
 
@@ -30,7 +37,6 @@ public:
     QVector<Cell> getRemovedCells(MovePointer move) const;
     QVector<MovePointer> getAllMoves(Cell cell, bool allowSingleJumps = false, bool onlyJumps = false) const; //allowSingleJumps allows for single jump in multiple jump context
     BoardPointer executeMove(MovePointer move) const;
-
     BoardPointer treeBranchGenerator() const;
 
     static BoardPointer defaultBoard();

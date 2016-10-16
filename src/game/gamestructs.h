@@ -18,6 +18,7 @@ struct Cell {
     inline quint8 getCellNum() const { return column + row * 4; }
     inline static Cell fromNum(quint8 cellNum) { return Cell(cellNum % 4, cellNum / 8); }
 };
+using CellPointer = QSharedPointer<Cell>;
 
 enum class DirectionToken { FRight, FLeft, BRight, BLeft, JFRight, JFLeft, JBRight, JBLeft };
 
