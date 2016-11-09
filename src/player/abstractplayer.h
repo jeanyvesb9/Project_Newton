@@ -1,0 +1,54 @@
+#ifndef ABSTRACTPLAYER_H
+#define ABSTRACTPLAYER_H
+
+#include <QObject>
+#include <QApplication>
+#include <QSharedPointer>
+#include <QMutex>
+#include <QTime>
+
+#include "src/game/board.h"
+
+class AbstractPlayer : public QObject
+{
+    Q_OBJECT
+public:
+    explicit AbstractPlayer(Game::Side side, QObject *parent = 0);
+
+    inline Game::Side getSide() const { return side; }
+    bool isRunning();
+
+signals:
+    void finishedTurn(Game::MovePointer move, int time);
+    void hasStopped();
+
+public slots:
+    bool startTurn(Game::BoardData boardData);
+
+    void launchBackgroundTask();
+    void pauseBackgroundTask();
+    void resumeBackgroundTask();
+
+    void stopAndDelete();
+
+protected:
+    Game::BoardPointer board;
+    Game::Side side;
+
+    virtual void executeTurn() = 0;
+    virtual void backgroundTask(); //HAS TO BE ATOMIC!!
+
+private:
+    QMutex mutex;
+    bool running;
+    bool hasToBegin;
+    bool backgroundTaskStatus;
+    bool hasToStop;
+
+    QTime time;
+
+    void finishTurn(Game::MovePointer move);
+};
+using AbstractPlayerPointer = QSharedPointer<AbstractPlayer>;
+
+#endif // ABSTRACTPLAYER_H

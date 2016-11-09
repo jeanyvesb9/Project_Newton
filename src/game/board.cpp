@@ -4,7 +4,7 @@ using namespace Game;
 
 Board::Board(BoardData data, QObject *parent)
     : QObject(parent),
-      data{data}
+      data{data}, treeCellDirectionNumber{-1}
 {
 
 }
@@ -14,7 +14,7 @@ bool Board::isMoveValid(MovePointer move) const
     const Cell &cell = move->cell;
     const quint8 row = move->cell.row;
     const quint8 column = move->cell.column;
-    const quint8 cellNum = move->cell.getCellNum();
+    const quint8 cellNum = move->cell.toCellNum();
     const Pieces piece = data.at(cellNum);
 
     if(piece == Pieces::Empty)
@@ -29,7 +29,7 @@ bool Board::isMoveValid(MovePointer move) const
             {
                 return true;
             }
-            else if(column != 3 && data.at(cellNum + 5) == Pieces::Empty)
+            else if((row % 2) && column != 3 && data.at(cellNum + 5) == Pieces::Empty)
             {
                 return true;
             }
@@ -40,7 +40,7 @@ bool Board::isMoveValid(MovePointer move) const
             {
                 return true;
             }
-            else if(data.at(cellNum - 4) == Pieces::Empty)
+            else if((row % 2) && data.at(cellNum - 4) == Pieces::Empty)
             {
                 return true;
             }
@@ -54,7 +54,7 @@ bool Board::isMoveValid(MovePointer move) const
             {
                 return true;
             }
-            else if(data.at(cellNum + 4) == Pieces::Empty)
+            else if((row % 2) && data.at(cellNum + 4) == Pieces::Empty)
             {
                 return true;
             }
@@ -65,7 +65,7 @@ bool Board::isMoveValid(MovePointer move) const
             {
                 return true;
             }
-            else if(column != 3 && data.at(cellNum - 3) == Pieces::Empty)
+            else if((row % 2) && column != 3 && data.at(cellNum - 3) == Pieces::Empty)
             {
                 return true;
             }
@@ -79,7 +79,7 @@ bool Board::isMoveValid(MovePointer move) const
             {
                 return true;
             }
-            else if(column != 3 && data.at(cellNum - 3) == Pieces::Empty)
+            else if((row % 2) && column != 3 && data.at(cellNum - 3) == Pieces::Empty)
             {
                 return true;
             }
@@ -90,7 +90,7 @@ bool Board::isMoveValid(MovePointer move) const
             {
                 return true;
             }
-            else if(data.at(cellNum + 4) == Pieces::Empty)
+            else if((row % 2) && data.at(cellNum + 4) == Pieces::Empty)
             {
                 return true;
             }
@@ -104,7 +104,7 @@ bool Board::isMoveValid(MovePointer move) const
             {
                 return true;
             }
-            else if(data.at(cellNum - 4) == Pieces::Empty)
+            else if((row % 2) && data.at(cellNum - 4) == Pieces::Empty)
             {
                 return true;
             }
@@ -115,7 +115,7 @@ bool Board::isMoveValid(MovePointer move) const
             {
                 return true;
             }
-            else if(column != 3 && data.at(cellNum + 5) == Pieces::Empty)
+            else if((row % 2) && column != 3 && data.at(cellNum + 5) == Pieces::Empty)
             {
                 return true;
             }
@@ -125,9 +125,15 @@ bool Board::isMoveValid(MovePointer move) const
     case DirectionToken::JFLeft:
         if((piece == Pieces::OpPlayer || piece == Pieces::OpKing) && row < 6 && column != 3)
         {
+            if(piece == Pieces::OpPlayer && getNewCell(move, false).row == 7 && !move->concatenatedMove.isNull())
+            {
+                return false;
+            }
+
             if(!(row % 2) && (data.at(cellNum + 4) == Pieces::Player || data.at(cellNum + 4) == Pieces::King)
                     && data.at(cellNum + 9) == Pieces::Empty)
             {
+
                 if(move->concatenatedMove.isNull())
                 {
                     return true;
@@ -142,7 +148,7 @@ bool Board::isMoveValid(MovePointer move) const
                     return childBoard->isMoveValid(move->concatenatedMove);
                 }
             }
-            else if((data.at(cellNum + 5) == Pieces::Player || data.at(cellNum + 5) == Pieces::King)
+            else if((row % 2) && (data.at(cellNum + 5) == Pieces::Player || data.at(cellNum + 5) == Pieces::King)
                     && data.at(cellNum + 9) == Pieces::Empty)
             {
                 if(move->concatenatedMove.isNull())
@@ -162,6 +168,10 @@ bool Board::isMoveValid(MovePointer move) const
         }
         else if((piece == Pieces::Player || piece == Pieces::King) && row > 1 && column != 0)
         {
+            if(piece == Pieces::Player && getNewCell(move, false).row == 0 && !move->concatenatedMove.isNull())
+            {
+                return false;
+            }
             if(!(row % 2) && (data.at(cellNum - 5) == Pieces::OpPlayer || data.at(cellNum - 5) == Pieces::OpKing)
                     && data.at(cellNum - 9) == Pieces::Empty)
             {
@@ -179,7 +189,7 @@ bool Board::isMoveValid(MovePointer move) const
                     return childBoard->isMoveValid(move->concatenatedMove);
                 }
             }
-            else if((data.at(cellNum - 4) == Pieces::OpPlayer || data.at(cellNum - 4) == Pieces::OpKing)
+            else if((row % 2) && (data.at(cellNum - 4) == Pieces::OpPlayer || data.at(cellNum - 4) == Pieces::OpKing)
                     && data.at(cellNum - 9) == Pieces::Empty)
             {
                 if(move->concatenatedMove.isNull())
@@ -202,6 +212,11 @@ bool Board::isMoveValid(MovePointer move) const
     case DirectionToken::JFRight:
         if((piece == Pieces::OpPlayer || piece == Pieces::OpKing) && row < 6 && column != 0)
         {
+            if(piece == Pieces::OpPlayer && getNewCell(move, false).row == 7 && !move->concatenatedMove.isNull())
+            {
+                return false;
+            }
+
             if(!(row % 2) && (data.at(cellNum + 3) == Pieces::Player || data.at(cellNum + 3) == Pieces::King)
                     && data.at(cellNum + 7) == Pieces::Empty)
             {
@@ -219,7 +234,7 @@ bool Board::isMoveValid(MovePointer move) const
                     return childBoard->isMoveValid(move->concatenatedMove);
                 }
             }
-            else if((data.at(cellNum + 4) == Pieces::Player || data.at(cellNum + 4) == Pieces::King)
+            else if((row % 2) && (data.at(cellNum + 4) == Pieces::Player || data.at(cellNum + 4) == Pieces::King)
                     && data.at(cellNum + 7) == Pieces::Empty)
             {
                 if(move->concatenatedMove.isNull())
@@ -239,6 +254,10 @@ bool Board::isMoveValid(MovePointer move) const
         }
         else if((piece == Pieces::Player || piece == Pieces::King) && row > 1 && column != 3)
         {
+            if(piece == Pieces::Player && getNewCell(move, false).row == 0 && !move->concatenatedMove.isNull())
+            {
+                return false;
+            }
             if(!(row % 2) && (data.at(cellNum - 4) == Pieces::OpPlayer || data.at(cellNum - 4) == Pieces::OpKing)
                     && data.at(cellNum - 7) == Pieces::Empty)
             {
@@ -256,7 +275,7 @@ bool Board::isMoveValid(MovePointer move) const
                     return childBoard->isMoveValid(move->concatenatedMove);
                 }
             }
-            else if((data.at(cellNum - 3) == Pieces::OpPlayer || data.at(cellNum - 3) == Pieces::OpKing)
+            else if((row % 2) && (data.at(cellNum - 3) == Pieces::OpPlayer || data.at(cellNum - 3) == Pieces::OpKing)
                     && data.at(cellNum - 7) == Pieces::Empty)
             {
                 if(move->concatenatedMove.isNull())
@@ -296,7 +315,7 @@ bool Board::isMoveValid(MovePointer move) const
                     return childBoard->isMoveValid(move->concatenatedMove);
                 }
             }
-            else if((data.at(cellNum - 3) == Pieces::Player || data.at(cellNum - 3) == Pieces::King)
+            else if((row % 2) && (data.at(cellNum - 3) == Pieces::Player || data.at(cellNum - 3) == Pieces::King)
                     && data.at(cellNum - 7) == Pieces::Empty)
             {
                 if(move->concatenatedMove.isNull())
@@ -333,7 +352,7 @@ bool Board::isMoveValid(MovePointer move) const
                     return childBoard->isMoveValid(move->concatenatedMove);
                 }
             }
-            else if((data.at(cellNum + 4) == Pieces::OpPlayer || data.at(cellNum + 4) == Pieces::OpKing)
+            else if((row % 2) && (data.at(cellNum + 4) == Pieces::OpPlayer || data.at(cellNum + 4) == Pieces::OpKing)
                     && data.at(cellNum + 7) == Pieces::Empty)
             {
                 if(move->concatenatedMove.isNull())
@@ -373,7 +392,7 @@ bool Board::isMoveValid(MovePointer move) const
                     return childBoard->isMoveValid(move->concatenatedMove);
                 }
             }
-            else if((data.at(cellNum - 4) == Pieces::Player || data.at(cellNum - 4) == Pieces::King)
+            else if((row % 2) && (data.at(cellNum - 4) == Pieces::Player || data.at(cellNum - 4) == Pieces::King)
                     && data.at(cellNum - 9) == Pieces::Empty)
             {
                 if(move->concatenatedMove.isNull())
@@ -410,7 +429,7 @@ bool Board::isMoveValid(MovePointer move) const
                     return childBoard->isMoveValid(move->concatenatedMove);
                 }
             }
-            else if((data.at(cellNum + 5) == Pieces::OpPlayer || data.at(cellNum + 5) == Pieces::OpKing)
+            else if((row % 2) && (data.at(cellNum + 5) == Pieces::OpPlayer || data.at(cellNum + 5) == Pieces::OpKing)
                     && data.at(cellNum + 9) == Pieces::Empty)
             {
                 if(move->concatenatedMove.isNull())
@@ -434,9 +453,9 @@ bool Board::isMoveValid(MovePointer move) const
     return false;
 }
 
-Cell Board::getNewCell(MovePointer move) const
+Cell Board::getNewCell(MovePointer move, bool recursive) const
 {
-    quint8 cellNum = move->cell.getCellNum();
+    quint8 cellNum = move->cell.toCellNum();
     quint8 row = move->cell.row;
     quint8 column = move->cell.column;
     const Pieces piece = data.at(cellNum);
@@ -461,7 +480,7 @@ Cell Board::getNewCell(MovePointer move) const
             {
                 return Cell(column - 1, row - 1);
             }
-            else
+            else if(row % 2)
             {
                 return Cell(column, row - 1);
             }
@@ -475,9 +494,9 @@ Cell Board::getNewCell(MovePointer move) const
             {
                 return Cell(column - 1, row + 1);
             }
-            else
+            else if(row % 2)
             {
-                return Cell(column, row - 1);
+                return Cell(column, row + 1);
             }
         }
         else if((piece == Pieces::Player || piece == Pieces::King) && row != 0)
@@ -511,7 +530,7 @@ Cell Board::getNewCell(MovePointer move) const
             {
                 return Cell(column - 1, row + 1);
             }
-            else
+            else if(row % 2)
             {
                 return Cell(column, row + 1);
             }
@@ -525,7 +544,7 @@ Cell Board::getNewCell(MovePointer move) const
             {
                 return Cell(column - 1, row - 1);
             }
-            else
+            else if(row % 2)
             {
                 return Cell(column, row - 1);
             }
@@ -549,7 +568,7 @@ Cell Board::getNewCell(MovePointer move) const
     case DirectionToken::JBRight:
         try
         {
-            QPair<qint8, qint8> jump = jumpNewCellModifier(move);
+            QPair<qint8, qint8> jump = jumpNewCellModifier(move, recursive);
             return Cell(column + jump.first, row + jump.second);
         }
         catch (JumpException &e)
@@ -563,9 +582,237 @@ Cell Board::getNewCell(MovePointer move) const
     throw newCellException();
 }
 
+QPair<qint8, qint8> Board::jumpNewCellModifier(MovePointer move, bool recursive) const
+{
+    quint8 cellNum = move->cell.toCellNum();
+    quint8 row = move->cell.row;
+    quint8 column = move->cell.column;
+    const Pieces piece = data.at(cellNum);
+    switch(move->direction)
+    {
+    case DirectionToken::JFLeft:
+        if((piece == Pieces::OpPlayer || piece == Pieces::OpKing) && row < 6 && column != 3)
+        {
+            if(move->concatenatedMove.isNull() || !recursive)
+            {
+                return QPair<qint8, qint8>(1, 2);
+            }
+            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
+                    || move->concatenatedMove->direction == DirectionToken::JFRight
+                    || (piece == Pieces::OpKing && move->concatenatedMove->direction == DirectionToken::JBLeft)
+                    || (piece == Pieces::OpKing && move->concatenatedMove->direction == DirectionToken::JBRight))
+            {
+                MovePointer newMove(new Move(move->cell, DirectionToken::JFLeft));
+                BoardPointer childBoard = this->executeMove(newMove);
+                try
+                {
+                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
+                    return QPair<qint8, qint8>(1 + jumpAdder.first, 2 + jumpAdder.second);
+                }
+                catch (JumpException &e)
+                {
+                    Q_UNUSED(e);
+                    throw;
+                }
+            }
+        }
+        else if((piece == Pieces::Player || piece == Pieces::King) && row > 1 && column != 0)
+        {
+            if(move->concatenatedMove.isNull() || !recursive)
+            {
+                return QPair<qint8, qint8>(-1, -2);
+            }
+            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
+                    || move->concatenatedMove->direction == DirectionToken::JFRight
+                    || (piece == Pieces::King && move->concatenatedMove->direction == DirectionToken::JBLeft)
+                    || (piece == Pieces::King && move->concatenatedMove->direction == DirectionToken::JBRight))
+            {
+                MovePointer newMove(new Move(move->cell, DirectionToken::JFLeft));
+                BoardPointer childBoard = this->executeMove(newMove);
+                try
+                {
+                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
+                    return QPair<qint8, qint8>(-1 + jumpAdder.first, -2 + jumpAdder.second);
+                }
+                catch (JumpException &e)
+                {
+                    Q_UNUSED(e);
+                    throw;
+                }
+            }
+        }
+        break;
+
+    case DirectionToken::JFRight:
+        if((piece == Pieces::OpPlayer || piece == Pieces::OpKing) && row < 6 && column != 0)
+        {
+            if(move->concatenatedMove.isNull() || !recursive)
+            {
+                return QPair<qint8, qint8>(-1, 2);
+            }
+            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
+                    || move->concatenatedMove->direction == DirectionToken::JFRight
+                    || (piece == Pieces::OpKing && move->concatenatedMove->direction == DirectionToken::JBLeft)
+                    || (piece == Pieces::OpKing && move->concatenatedMove->direction == DirectionToken::JBRight))
+            {
+                MovePointer newMove(new Move(move->cell, DirectionToken::JFRight));
+                BoardPointer childBoard = this->executeMove(newMove);
+                try
+                {
+                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
+                    return QPair<qint8, qint8>(-1 + jumpAdder.first, 2 + jumpAdder.second);
+                }
+                catch (JumpException &e)
+                {
+                    Q_UNUSED(e);
+                    throw;
+                }
+            }
+        }
+        else if((piece == Pieces::Player || piece == Pieces::King) && row > 1 && column != 3)
+        {
+            if(move->concatenatedMove.isNull() || !recursive)
+            {
+                return QPair<qint8, quint8>(1, -2);
+            }
+            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
+                    || move->concatenatedMove->direction == DirectionToken::JFRight
+                    || (piece == Pieces::King && move->concatenatedMove->direction == DirectionToken::JBLeft)
+                    || (piece == Pieces::King && move->concatenatedMove->direction == DirectionToken::JBRight))
+            {
+                MovePointer newMove(new Move(move->cell, DirectionToken::JFRight));
+                BoardPointer childBoard = this->executeMove(newMove);
+                try
+                {
+                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
+                    return QPair<qint8, qint8>(1 + jumpAdder.first, -2 + jumpAdder.second);
+                }
+                catch (JumpException &e)
+                {
+                    Q_UNUSED(e);
+                    throw;
+                }
+            }
+        }
+        break;
+
+    case DirectionToken::JBLeft:
+        if(piece == Pieces::OpKing && row > 1 && column != 3)
+        {
+            if(move->concatenatedMove.isNull() || !recursive)
+            {
+                return QPair<qint8, qint8>(1, -2);
+            }
+            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
+                    || move->concatenatedMove->direction == DirectionToken::JFRight
+                    || move->concatenatedMove->direction == DirectionToken::JBLeft
+                    || move->concatenatedMove->direction == DirectionToken::JBRight)
+            {
+                MovePointer newMove(new Move(move->cell, DirectionToken::JBLeft));
+                BoardPointer childBoard = this->executeMove(newMove);
+                try
+                {
+                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
+                    return QPair<qint8, qint8>(1 + jumpAdder.first, -2 + jumpAdder.second);
+                }
+                catch (JumpException &e)
+                {
+                    Q_UNUSED(e);
+                    throw;
+                }
+            }
+        }
+        else if(piece == Pieces::King && row < 6 && column != 0)
+        {
+            if(move->concatenatedMove.isNull() || !recursive)
+            {
+                return QPair<qint8, qint8>(-1, 2);
+            }
+            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
+                    || move->concatenatedMove->direction == DirectionToken::JFRight
+                    || move->concatenatedMove->direction == DirectionToken::JBLeft
+                    || move->concatenatedMove->direction == DirectionToken::JBRight)
+            {
+                MovePointer newMove(new Move(move->cell, DirectionToken::JBLeft));
+                BoardPointer childBoard = this->executeMove(newMove);
+                try
+                {
+                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
+                    return QPair<qint8, qint8>(-1 + jumpAdder.first, 2 + jumpAdder.second);
+                }
+                catch (JumpException &e)
+                {
+                    Q_UNUSED(e);
+                    throw;
+                }
+            }
+        }
+        break;
+
+    case DirectionToken::JBRight:
+        if(piece == Pieces::OpKing && row > 1 && column != 0)
+        {
+            if(move->concatenatedMove.isNull() || !recursive)
+            {
+                return QPair<qint8, qint8>(-1, -2);
+            }
+            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
+                    || move->concatenatedMove->direction == DirectionToken::JFRight
+                    || move->concatenatedMove->direction == DirectionToken::JBLeft
+                    || move->concatenatedMove->direction == DirectionToken::JBRight)
+            {
+                MovePointer newMove(new Move(move->cell, DirectionToken::JBRight));
+                BoardPointer childBoard = this->executeMove(newMove);
+                try
+                {
+                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
+                    return QPair<qint8, qint8>(-1 + jumpAdder.first, -2 + jumpAdder.second);
+                }
+                catch (JumpException &e)
+                {
+                    Q_UNUSED(e);
+                    throw;
+                }
+            }
+        }
+        else if(piece == Pieces::King && row < 6 && column != 3)
+        {
+            if(move->concatenatedMove.isNull() || !recursive)
+            {
+                return QPair<qint8, qint8>(1, 2);
+            }
+            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
+                    || move->concatenatedMove->direction == DirectionToken::JFRight
+                    || move->concatenatedMove->direction == DirectionToken::JBLeft
+                    || move->concatenatedMove->direction == DirectionToken::JBRight)
+            {
+                MovePointer newMove(new Move(move->cell, DirectionToken::JBRight));
+                BoardPointer childBoard = this->executeMove(newMove);
+                try
+                {
+                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
+                    return QPair<qint8, qint8>(1 + jumpAdder.first, 2 + jumpAdder.second);
+                }
+                catch (JumpException &e)
+                {
+                    Q_UNUSED(e);
+                    throw;
+                }
+            }
+        }
+        break;
+
+    default:
+        throw JumpException();
+        break;
+    }
+
+    throw JumpException();
+}
+
 QVector<Cell> Board::getRemovedCells(MovePointer move) const
 {
-    quint8 cellNum = move->cell.getCellNum();
+    quint8 cellNum = move->cell.toCellNum();
     quint8 column = move->cell.column;
     quint8 row = move->cell.row;
     Pieces piece = this->data.at(cellNum);
@@ -776,237 +1023,9 @@ QVector<Cell> Board::getRemovedCells(MovePointer move) const
     return QVector<Cell>();
 }
 
-QPair<qint8, qint8> Board::jumpNewCellModifier(MovePointer move) const
+QVector<MovePointer> Board::getAllMovesForCell(Cell cell, bool onlyJumps) const
 {
-    quint8 cellNum = move->cell.getCellNum();
-    quint8 row = move->cell.row;
-    quint8 column = move->cell.column;
-    const Pieces piece = data.at(cellNum);
-    switch(move->direction)
-    {
-    case DirectionToken::JFLeft:
-        if((piece == Pieces::OpPlayer || piece == Pieces::OpKing) && row < 6 && column != 3)
-        {
-            if(move->concatenatedMove.isNull())
-            {
-                return QPair<qint8, qint8>(1, 2);
-            }
-            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
-                    || move->concatenatedMove->direction == DirectionToken::JFRight
-                    || (piece == Pieces::OpKing && move->concatenatedMove->direction == DirectionToken::JBLeft)
-                    || (piece == Pieces::OpKing && move->concatenatedMove->direction == DirectionToken::JBRight))
-            {
-                MovePointer newMove(new Move(move->cell, DirectionToken::JFLeft));
-                BoardPointer childBoard = this->executeMove(newMove);
-                try
-                {
-                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
-                    return QPair<qint8, qint8>(1 + jumpAdder.first, 2 + jumpAdder.second);
-                }
-                catch (JumpException &e)
-                {
-                    Q_UNUSED(e);
-                    throw;
-                }
-            }
-        }
-        else if((piece == Pieces::Player || piece == Pieces::King) && row > 1 && column != 0)
-        {
-            if(move->concatenatedMove.isNull())
-            {
-                return QPair<qint8, qint8>(-1, -2);
-            }
-            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
-                    || move->concatenatedMove->direction == DirectionToken::JFRight
-                    || (piece == Pieces::King && move->concatenatedMove->direction == DirectionToken::JBLeft)
-                    || (piece == Pieces::King && move->concatenatedMove->direction == DirectionToken::JBRight))
-            {
-                MovePointer newMove(new Move(move->cell, DirectionToken::JFLeft));
-                BoardPointer childBoard = this->executeMove(newMove);
-                try
-                {
-                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
-                    return QPair<qint8, qint8>(-1 + jumpAdder.first, -2 + jumpAdder.second);
-                }
-                catch (JumpException &e)
-                {
-                    Q_UNUSED(e);
-                    throw;
-                }
-            }
-        }
-        break;
-
-    case DirectionToken::JFRight:
-        if((piece == Pieces::OpPlayer || piece == Pieces::OpKing) && row < 6 && column != 0)
-        {
-            if(move->concatenatedMove.isNull())
-            {
-                return QPair<qint8, qint8>(-1, 2);
-            }
-            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
-                    || move->concatenatedMove->direction == DirectionToken::JFRight
-                    || (piece == Pieces::OpKing && move->concatenatedMove->direction == DirectionToken::JBLeft)
-                    || (piece == Pieces::OpKing && move->concatenatedMove->direction == DirectionToken::JBRight))
-            {
-                MovePointer newMove(new Move(move->cell, DirectionToken::JFRight));
-                BoardPointer childBoard = this->executeMove(newMove);
-                try
-                {
-                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
-                    return QPair<qint8, qint8>(-1 + jumpAdder.first, 2 + jumpAdder.second);
-                }
-                catch (JumpException &e)
-                {
-                    Q_UNUSED(e);
-                    throw;
-                }
-            }
-        }
-        else if((piece == Pieces::Player || piece == Pieces::King) && row > 1 && column != 3)
-        {
-            if(move->concatenatedMove.isNull())
-            {
-                return QPair<qint8, quint8>(1, -2);
-            }
-            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
-                    || move->concatenatedMove->direction == DirectionToken::JFRight
-                    || (piece == Pieces::King && move->concatenatedMove->direction == DirectionToken::JBLeft)
-                    || (piece == Pieces::King && move->concatenatedMove->direction == DirectionToken::JBRight))
-            {
-                MovePointer newMove(new Move(move->cell, DirectionToken::JFRight));
-                BoardPointer childBoard = this->executeMove(newMove);
-                try
-                {
-                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
-                    return QPair<qint8, qint8>(1 + jumpAdder.first, -2 + jumpAdder.second);
-                }
-                catch (JumpException &e)
-                {
-                    Q_UNUSED(e);
-                    throw;
-                }
-            }
-        }
-        break;
-
-    case DirectionToken::JBLeft:
-        if(piece == Pieces::OpKing && row > 1 && column != 3)
-        {
-            if(move->concatenatedMove.isNull())
-            {
-                return QPair<qint8, qint8>(1, -2);
-            }
-            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
-                    || move->concatenatedMove->direction == DirectionToken::JFRight
-                    || move->concatenatedMove->direction == DirectionToken::JBLeft
-                    || move->concatenatedMove->direction == DirectionToken::JBRight)
-            {
-                MovePointer newMove(new Move(move->cell, DirectionToken::JBLeft));
-                BoardPointer childBoard = this->executeMove(newMove);
-                try
-                {
-                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
-                    return QPair<qint8, qint8>(1 + jumpAdder.first, -2 + jumpAdder.second);
-                }
-                catch (JumpException &e)
-                {
-                    Q_UNUSED(e);
-                    throw;
-                }
-            }
-        }
-        else if(piece == Pieces::King && row < 6 && column != 0)
-        {
-            if(move->concatenatedMove.isNull())
-            {
-                return QPair<qint8, qint8>(-1, 2);
-            }
-            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
-                    || move->concatenatedMove->direction == DirectionToken::JFRight
-                    || move->concatenatedMove->direction == DirectionToken::JBLeft
-                    || move->concatenatedMove->direction == DirectionToken::JBRight)
-            {
-                MovePointer newMove(new Move(move->cell, DirectionToken::JBLeft));
-                BoardPointer childBoard = this->executeMove(newMove);
-                try
-                {
-                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
-                    return QPair<qint8, qint8>(-1 + jumpAdder.first, 2 + jumpAdder.second);
-                }
-                catch (JumpException &e)
-                {
-                    Q_UNUSED(e);
-                    throw;
-                }
-            }
-        }
-        break;
-
-    case DirectionToken::JBRight:
-        if(piece == Pieces::OpKing && row > 1 && column != 0)
-        {
-            if(move->concatenatedMove.isNull())
-            {
-                return QPair<qint8, qint8>(-1, -2);
-            }
-            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
-                    || move->concatenatedMove->direction == DirectionToken::JFRight
-                    || move->concatenatedMove->direction == DirectionToken::JBLeft
-                    || move->concatenatedMove->direction == DirectionToken::JBRight)
-            {
-                MovePointer newMove(new Move(move->cell, DirectionToken::JBRight));
-                BoardPointer childBoard = this->executeMove(newMove);
-                try
-                {
-                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
-                    return QPair<qint8, qint8>(-1 + jumpAdder.first, -2 + jumpAdder.second);
-                }
-                catch (JumpException &e)
-                {
-                    Q_UNUSED(e);
-                    throw;
-                }
-            }
-        }
-        else if(piece == Pieces::King && row < 6 && column != 3)
-        {
-            if(move->concatenatedMove.isNull())
-            {
-                return QPair<qint8, qint8>(1, 2);
-            }
-            else if(move->concatenatedMove->direction == DirectionToken::JFLeft
-                    || move->concatenatedMove->direction == DirectionToken::JFRight
-                    || move->concatenatedMove->direction == DirectionToken::JBLeft
-                    || move->concatenatedMove->direction == DirectionToken::JBRight)
-            {
-                MovePointer newMove(new Move(move->cell, DirectionToken::JBRight));
-                BoardPointer childBoard = this->executeMove(newMove);
-                try
-                {
-                    QPair<qint8, qint8> jumpAdder = childBoard->jumpNewCellModifier(move->concatenatedMove);
-                    return QPair<qint8, qint8>(1 + jumpAdder.first, 2 + jumpAdder.second);
-                }
-                catch (JumpException &e)
-                {
-                    Q_UNUSED(e);
-                    throw;
-                }
-            }
-        }
-        break;
-
-    default:
-        throw JumpException();
-        break;
-    }
-
-    throw JumpException();
-}
-
-QVector<MovePointer> Board::getAllMoves(Cell cell, bool allowSingleJumps, bool onlyJumps) const
-{
-    quint8 cellNum = cell.getCellNum();
+    quint8 cellNum = cell.toCellNum();
     Pieces piece = data.at(cellNum);
     QVector<MovePointer> moves;
 
@@ -1015,87 +1034,120 @@ QVector<MovePointer> Board::getAllMoves(Cell cell, bool allowSingleJumps, bool o
 
     if(!onlyJumps)
     {
-        MovePointer move(new Move(cell, DirectionToken::FLeft));
+        moves <<getCompleteMove(cell, DirectionToken::FLeft);
+        moves <<getCompleteMove(cell, DirectionToken::FRight);
+        moves <<getCompleteMove(cell, DirectionToken::BLeft);
+        moves <<getCompleteMove(cell, DirectionToken::BRight);
+    }
+
+    moves <<getCompleteMove(cell, DirectionToken::JFLeft);
+    moves <<getCompleteMove(cell, DirectionToken::JFRight);
+    moves <<getCompleteMove(cell, DirectionToken::JBLeft);
+    moves <<getCompleteMove(cell, DirectionToken::JBRight);
+
+    return moves;
+}
+
+QVector<MovePointer> Board::getCompleteMove(Cell cell, DirectionToken direction) const
+{
+    quint8 cellNum = cell.toCellNum();
+    Pieces piece = data.at(cellNum);
+    QVector<MovePointer> moves;
+
+    if(piece == Pieces::Empty)
+        return moves;
+
+    MovePointer move;
+    switch(direction)
+    {
+    case DirectionToken::FLeft:
+        move.reset(new Move(cell, DirectionToken::FLeft));
         if(isMoveValid(move))
         {
             moves << move;
         }
+        break;
+    case DirectionToken::FRight:
         move.reset(new Move(cell, DirectionToken::FRight));
         if(isMoveValid(move))
         {
             moves << move;
         }
+        break;
+    case DirectionToken::BLeft:
         move.reset(new Move(cell, DirectionToken::BLeft));
         if(isMoveValid(move))
         {
             moves << move;
         }
+        break;
+    case DirectionToken::BRight:
         move.reset(new Move(cell, DirectionToken::BRight));
         if(isMoveValid(move))
         {
             moves << move;
         }
-    }
-
-    MovePointer move(new Move(cell, DirectionToken::JFLeft));
-    if(isMoveValid(move))
-    {
-        if(allowSingleJumps)
+        break;
+    case DirectionToken::JFLeft:
+        move.reset(new Move(cell, DirectionToken::JFLeft));
+        if(isMoveValid(move))
         {
-            moves << move;
-        }
-        else
-        {
-            BoardPointer newBoard = this->executeMove(move);
-            QVector<MovePointer> nm = newBoard->getAllMoves(this->getNewCell(move), false, true);
-            if(nm.empty())
+            BoardModificationPointer bmp = BoardModificationPointer(new BoardModification());
+            BoardPointer newBoard = this->executeMove(move, bmp);
+            if(bmp->newCrownedCell.isNull())
             {
-                moves << move;
+                QVector<MovePointer> nm = newBoard->getAllMovesForCell(this->getNewCell(move), true);
+                if(nm.empty())
+                {
+                    moves << move;
+                }
+                else
+                {
+                    for(auto &m : nm)
+                    {
+                        moves << MovePointer(new Move(cell, DirectionToken::JFLeft, m));
+                    }
+                }
             }
             else
             {
-                for(auto &m : nm)
-                {
-                    moves << MovePointer(new Move(cell, DirectionToken::JFLeft, m));
-                }
+                moves << move;
             }
         }
-    }
-    move.reset(new Move(cell, DirectionToken::JFRight));
-    if(isMoveValid(move))
-    {
-        if(allowSingleJumps)
+        break;
+    case DirectionToken::JFRight:
+        move.reset(new Move(cell, DirectionToken::JFRight));
+        if(isMoveValid(move))
         {
-            moves << move;
-        }
-        else
-        {
-            BoardPointer newBoard = this->executeMove(move);
-            QVector<MovePointer> nm = newBoard->getAllMoves(this->getNewCell(move), false, true);
-            if(nm.empty())
+            BoardModificationPointer bmp = BoardModificationPointer(new BoardModification());
+            BoardPointer newBoard = this->executeMove(move, bmp);
+            if(bmp->newCrownedCell.isNull())
             {
-                moves << move;
+                QVector<MovePointer> nm = newBoard->getAllMovesForCell(this->getNewCell(move), true);
+                if(nm.empty())
+                {
+                    moves << move;
+                }
+                else
+                {
+                    for(auto &m : nm)
+                    {
+                        moves << MovePointer(new Move(cell, DirectionToken::JFRight, m));
+                    }
+                }
             }
             else
             {
-                for(auto &m : nm)
-                {
-                    moves << MovePointer(new Move(cell, DirectionToken::JFRight, m));
-                }
+                moves << move;
             }
         }
-    }
-    move.reset(new Move(cell, DirectionToken::JBLeft));
-    if(isMoveValid(move))
-    {
-        if(allowSingleJumps)
-        {
-            moves << move;
-        }
-        else
+        break;
+    case DirectionToken::JBLeft:
+        move.reset(new Move(cell, DirectionToken::JBLeft));
+        if(isMoveValid(move))
         {
             BoardPointer newBoard = this->executeMove(move);
-            QVector<MovePointer> nm = newBoard->getAllMoves(this->getNewCell(move), false, true);
+            QVector<MovePointer> nm = newBoard->getAllMovesForCell(this->getNewCell(move), true);
             if(nm.empty())
             {
                 moves << move;
@@ -1108,18 +1160,13 @@ QVector<MovePointer> Board::getAllMoves(Cell cell, bool allowSingleJumps, bool o
                 }
             }
         }
-    }
-    move.reset(new Move(cell, DirectionToken::JBRight));
-    if(isMoveValid(move))
-    {
-        if(allowSingleJumps)
-        {
-            moves << move;
-        }
-        else
+        break;
+    case DirectionToken::JBRight:
+        move.reset(new Move(cell, DirectionToken::JBRight));
+        if(isMoveValid(move))
         {
             BoardPointer newBoard = this->executeMove(move);
-            QVector<MovePointer> nm = newBoard->getAllMoves(this->getNewCell(move), false, true);
+            QVector<MovePointer> nm = newBoard->getAllMovesForCell(this->getNewCell(move), true);
             if(nm.empty())
             {
                 moves << move;
@@ -1132,12 +1179,13 @@ QVector<MovePointer> Board::getAllMoves(Cell cell, bool allowSingleJumps, bool o
                 }
             }
         }
+        break;
     }
 
     return moves;
 }
 
-BoardPointer Board::executeMove(MovePointer move) const
+BoardPointer Board::executeMove(MovePointer move, BoardModificationPointer mdf) const
 {
     if(!this->isMoveValid(move))
     {
@@ -1145,33 +1193,158 @@ BoardPointer Board::executeMove(MovePointer move) const
     }
 
     BoardData nbd = this->data;
+    Cell nCell = getNewCell(move);
     switch(move->direction)
     {
     case DirectionToken::FLeft:
     case DirectionToken::FRight:
     case DirectionToken::BLeft:
     case DirectionToken::BRight:
-        nbd[getNewCell(move).getCellNum()] = nbd[move->cell.getCellNum()];
-        nbd[move->cell.getCellNum()] = Pieces::Empty;
+        nbd[nCell.toCellNum()] = nbd[move->cell.toCellNum()];
+        nbd[move->cell.toCellNum()] = Pieces::Empty;
         break;
     case DirectionToken::JFLeft:
     case DirectionToken::JFRight:
     case DirectionToken::JBLeft:
     case DirectionToken::JBRight:
-        nbd[getNewCell(move).getCellNum()] = nbd[move->cell.getCellNum()];
-        nbd[move->cell.getCellNum()] = Pieces::Empty;
+        nbd[nCell.toCellNum()] = nbd[move->cell.toCellNum()];
+        nbd[move->cell.toCellNum()] = Pieces::Empty;
         for(Cell &cell : this->getRemovedCells(move))
         {
-            nbd[cell.getCellNum()] = Pieces::Empty;
+            nbd[cell.toCellNum()] = Pieces::Empty;
+            if(!mdf.isNull())
+            {
+                mdf->removedCells.append(cell);
+            }
         }
         break;
+    }
+
+    Pieces piece = data.at(move->cell.toCellNum());
+    if((piece == Pieces::Player || piece == Pieces::OpPlayer)
+            && (nCell.row == 0 || nCell.row == 7))
+    {
+        if(!mdf.isNull())
+        {
+            mdf->newCrownedCell = CellPointer(new Cell(nCell));
+        }
+        nbd[nCell.toCellNum()] = piece == Pieces::Player ? Pieces::King : Pieces::OpKing;
     }
     return BoardPointer(new Board(nbd));
 }
 
-BoardPointer Board::treeBranchGenerator() const
+QVector<MovePointer> Board::getAllMoves(Side side) const
 {
+    QVector<MovePointer> ret;
+    for(int i = 0; i < 32; i++)
+    {
+        Cell cell = Cell::fromNum(i);
+        if((side == Side::PlayerSide || side == Side::Both) && (data.at(cell.toCellNum()) == Pieces::Player || data.at(cell.toCellNum()) == Pieces::King))
+        {
+            ret << getAllMovesForCell(cell);
+        }
+        else if ((side == Side::OpponentSide || side == Side::Both) && (data.at(cell.toCellNum()) == Pieces::OpPlayer || data.at(cell.toCellNum()) == Pieces::OpKing))
+        {
+            ret << getAllMovesForCell(cell);
+        }
+    }
+    return ret;
+}
+
+BoardPointer Board::treeBranchGenerator()
+{
+    constexpr static DirectionToken directions[8] = { DirectionToken::FLeft, DirectionToken::FRight,
+                                            DirectionToken::BLeft, DirectionToken::BRight,
+                                            DirectionToken::JFLeft, DirectionToken::JFRight,
+                                            DirectionToken::JBLeft, DirectionToken::JBRight };
+    while(1)
+    {
+        if(treeJumpBuffer.isEmpty() && treeCellDirectionNumber != 256)
+        {
+            treeCellDirectionNumber++;
+        }
+        if(treeCellDirectionNumber == 256)
+        {
+            break;
+        }
+        int directionNumber = treeCellDirectionNumber % 8;
+        Cell cell = Cell::fromNum(treeCellDirectionNumber / 8);
+        //qDebug() <<treeCellDirectionNumber <<" " <<cell.column <<" " <<cell.row;
+        if(directionNumber < 4)
+        {
+            QVector<MovePointer> moves = getCompleteMove(cell, directions[directionNumber]);
+            if(!moves.isEmpty())
+            {
+                return executeMove(moves.at(0));
+            }
+        }
+        else
+        {
+            if(treeJumpBuffer.isEmpty())
+            {
+                treeJumpBuffer = getCompleteMove(cell, directions[directionNumber]);
+            }
+            else
+            {
+                MovePointer move = treeJumpBuffer.first();
+                treeJumpBuffer.removeFirst();
+                return executeMove(move);
+            }
+        }
+    }
     return BoardPointer();
+}
+
+void Board::resetTreeBranchGenerator()
+{
+    treeCellDirectionNumber = -1;
+    treeJumpBuffer.clear();
+}
+
+QString Board::getBoardString() const
+{
+    std::wstring ret;
+    ret.append(L"\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\n");
+    for(int i = 0; i < 8; i++)
+    {
+        ret.append(L"\u2588");
+        if(i % 2 == 1)
+        {
+            ret.append(L"#");
+        }
+        for(int j = 0; j < 4; j++)
+        {
+            switch(this->data.at(i * 4 + j))
+            {
+            case Pieces::Empty:
+                ret.append(L" ");
+                break;
+
+            case Pieces::Player:
+                ret.append(L"X");
+                break;
+
+            case Pieces::King:
+                ret.append(L"K");
+                break;
+
+            case Pieces::OpPlayer:
+                ret.append(L"O");
+                break;
+
+            case Pieces::OpKing:
+                ret.append(L"H");
+                break;
+            }
+            if(!(i % 2 == 1 && j == 3))
+            {
+                ret.append(L"#");
+            }
+        }
+        ret.append(L"\u2588\n");
+    }
+    ret.append(L"\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588");
+    return QString::fromWCharArray(ret.data());
 }
 
 BoardPointer Board::defaultBoard()

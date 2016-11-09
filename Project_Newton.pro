@@ -1,19 +1,19 @@
-QT += qml quick sql
+QT += sql widgets gui core #qml quick
 
 CONFIG += c++14
 
 SOURCES += \
     src/main.cpp \
-    src/game/checkersgame.cpp \
     src/neuralNetwork/neuralnetwork.cpp \
-    src/engine/abstractengine.cpp \
-    src/engine/neuralnetworkengine.cpp \
-    src/engine/manualplayerengine.cpp \
     src/game/board.cpp \
     src/neuralNetwork/neuron.cpp \
     src/neuralNetwork/neuralnetworkmanager.cpp \
     src/utilityfunctions.cpp \
-    src/training/trainingengine.cpp
+    src/training/trainingengine.cpp \
+    src/ui/mainwindow.cpp \
+    src/player/abstractplayer.cpp \
+    src/engine/gameengine.cpp \
+    src/player/manualplayer.cpp
 
 RESOURCES += \
     resources.qrc
@@ -25,15 +25,18 @@ QML_IMPORT_PATH =
 include(deployment.pri)
 
 HEADERS += \
-    src/game/checkersgame.h \
     src/neuralNetwork/neuralnetwork.h \
-    src/engine/abstractengine.h \
-    src/engine/neuralnetworkengine.h \
-    src/engine/manualplayerengine.h \
     src/game/board.h \
     src/neuralNetwork/neuron.h \
     src/neuralNetwork/neuralnetworkmanager.h \
     src/utilityfunctions.h \
     src/training/trainingengine.h \
     src/training/trainingstructs.h \
-    src/game/gamestructs.h
+    src/game/gamestructs.h \
+    src/ui/mainwindow.h \
+    src/player/abstractplayer.h \
+    src/engine/gameengine.h \
+    src/player/manualplayer.h
+
+FORMS += \
+    src/ui/mainwindow.ui

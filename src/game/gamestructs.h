@@ -7,6 +7,7 @@
 
 namespace Game {
 
+enum class Side { PlayerSide, OpponentSide, Both };
 enum class Pieces { OpKing, OpPlayer, Empty, Player, King };
 using BoardData = QVector<Pieces>;
 
@@ -15,8 +16,9 @@ struct Cell {
     inline Cell(quint8 column, quint8 row) : column{column}, row{row} {}
     quint8 column;
     quint8 row;
-    inline quint8 getCellNum() const { return column + row * 4; }
-    inline static Cell fromNum(quint8 cellNum) { return Cell(cellNum % 4, cellNum / 8); }
+    inline quint8 toCellNum() const { return column + row * 4; }
+    inline static Cell fromNum(quint8 cellNum) { return Cell(cellNum % 4, cellNum / 4); }
+    inline QString toQString() const { return QStringLiteral("(").append(QString::number(column)).append(QStringLiteral(", ")).append(QString::number(row)).append(QStringLiteral(")")); }
 };
 using CellPointer = QSharedPointer<Cell>;
 
