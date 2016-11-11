@@ -13,7 +13,10 @@ SOURCES += \
     src/ui/mainwindow.cpp \
     src/player/abstractplayer.cpp \
     src/engine/gameengine.cpp \
-    src/player/manualplayer.cpp
+    src/player/manualplayer.cpp \
+    src/playing/playengine.cpp \
+    src/camera/cameraanalyser.cpp \
+    src/player/neuralnetworkplayer.cpp
 
 RESOURCES += \
     resources.qrc
@@ -36,7 +39,10 @@ HEADERS += \
     src/ui/mainwindow.h \
     src/player/abstractplayer.h \
     src/engine/gameengine.h \
-    src/player/manualplayer.h
+    src/player/manualplayer.h \
+    src/playing/playengine.h \
+    src/camera/cameraanalyser.h \
+    src/player/neuralnetworkplayer.h
 
 FORMS += \
     src/ui/mainwindow.ui

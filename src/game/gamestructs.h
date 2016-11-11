@@ -8,8 +8,8 @@
 namespace Game {
 
 enum class Side { PlayerSide, OpponentSide, Both };
-enum class Pieces { OpKing, OpPlayer, Empty, Player, King };
-using BoardData = QVector<Pieces>;
+enum class Piece { OpKing, OpPlayer, Empty, Player, King };
+using BoardData = QVector<Piece>;
 
 struct Cell {
     Cell() = default;

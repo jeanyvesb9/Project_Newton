@@ -19,14 +19,15 @@ class GameEngine : public QObject
 {
     Q_OBJECT
 public:
-    explicit GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2, QObject *parent = 0);
+    explicit GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2, int tie = 100, QObject *parent = 0);
     explicit GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2,
-                        Game::BoardData board, bool startingPlayer, int currentPlayer, int playtime,
+                        Game::BoardData board, int turnNumber, bool startingPlayer, int currentPlayer, int playtime,
+                        int tie = 100,
                         QObject *parent = 0);
 
+    ~GameEngine();
+
     Game::BoardPointer getBoard() const;
-    QVector<PlayerMovePointer> getMoves() const;
-    PlayerMovePointer getLastMove() const;
 
     bool getStartingPlayer() const;
     bool getCurrentPlayer() const;
@@ -37,11 +38,15 @@ public:
     int getPlayer2_kings() const;
 
     int getPlayTime() const;
+    int getWinningPlayer() const;
 
 signals:
     void madeMove(PlayerMovePointer move);
+    void hasTied();
+    void hasWon(int winningPlayer);
 
 public slots:
+    void stopGame();
 
 private slots:
     void player1_hasFinished(Game::MovePointer move, int time);
@@ -49,6 +54,8 @@ private slots:
 
 private:
     Game::BoardPointer board;
+    int tieValue;
+    int turnNumber;
 
     AbstractPlayerPointer player1;
     QThread *player1_thread;
@@ -59,7 +66,7 @@ private:
     int currentPlayer;
 
     int playTime;
-    QTime time;
+    QTime *time;
 };
 
 #endif // GAMEENGINE_H

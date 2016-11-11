@@ -33,22 +33,22 @@ Game::BoardData fileToBoard(QString fileName)
             switch(ch)
             {
             case ' ':
-                rtn.append(Game::Pieces::Empty);
+                rtn.append(Game::Piece::Empty);
                 break;
             case 'P':
-                rtn.append(Game::Pieces::Player);
+                rtn.append(Game::Piece::Player);
                 break;
             case 'K':
-                rtn.append(Game::Pieces::King);
+                rtn.append(Game::Piece::King);
                 break;
             case 'O':
                 if(data.at(0) == 'P')
                 {
-                    rtn.append(Game::Pieces::OpPlayer);
+                    rtn.append(Game::Piece::OpPlayer);
                 }
                 else
                 {
-                    rtn.append(Game::Pieces::OpKing);
+                    rtn.append(Game::Piece::OpKing);
                 }
                 data.remove(0, 1);
                 break;

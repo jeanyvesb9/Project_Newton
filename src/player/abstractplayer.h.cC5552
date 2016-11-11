@@ -41,14 +41,14 @@ protected:
     virtual void executeTurn() = 0;
     virtual void backgroundTask(); //HAS TO BE ATOMIC!!
 
-    void finishTurn(Game::MovePointer move);
-
 private:
     bool running;
     bool hasToBegin;
     bool backgroundTaskStatus;
 
     QTime time;
+
+    void finishTurn(Game::MovePointer move);
 };
 using AbstractPlayerPointer = QSharedPointer<AbstractPlayer>;
 

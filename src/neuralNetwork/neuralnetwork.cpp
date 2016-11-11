@@ -170,19 +170,19 @@ InputVector NeuralNetwork::createInputVector(const Game::BoardData &boardVector)
     {
         switch(element)
         {
-        case Game::Pieces::OpKing:
+        case Game::Piece::OpKing:
             ret.append(- this->data->king);
             break;
-        case Game::Pieces::OpPlayer:
+        case Game::Piece::OpPlayer:
             ret.append(-1.0);
             break;
-        case Game::Pieces::Empty:
+        case Game::Piece::Empty:
             ret.append(0);
             break;
-        case Game::Pieces::Player:
+        case Game::Piece::Player:
             ret.append(1.0);
             break;
-        case Game::Pieces::King:
+        case Game::Piece::King:
             ret.append(this->data->king);
             break;
         }

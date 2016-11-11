@@ -15,7 +15,7 @@ class AbstractPlayer : public QObject
 public:
     explicit AbstractPlayer(Game::Side side, QObject *parent = 0);
 
-    inline Game::Side getSide() const { return side; }
+    inline Game::Side getSide() const { return side; };
     bool isRunning();
 
 signals:
@@ -41,14 +41,14 @@ protected:
     virtual void executeTurn() = 0;
     virtual void backgroundTask(); //HAS TO BE ATOMIC!!
 
-    void finishTurn(Game::MovePointer move);
-
 private:
     bool running;
     bool hasToBegin;
     bool backgroundTaskStatus;
 
     QTime time;
+
+    void finishTurn(Game::MovePointer move);
 };
 using AbstractPlayerPointer = QSharedPointer<AbstractPlayer>;
 
