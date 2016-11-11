@@ -95,7 +95,7 @@ NeuralNetworkPointer NeuralNetwork::createChild() const
     NNTopologyDataPointer NNData = NNTopologyDataPointer(new NNTopologyData());
     NNData->Nw = this->data->Nw;
 
-    long double tau = 1.0L / std::sqrtl(2.0L * std::sqrtl(static_cast<long double>(data->Nw)));
+    long double tau = 1.0L / sqrtl(2.0L * sqrtl(static_cast<long double>(data->Nw)));
 
     std::random_device rd;
     std::mt19937_64 randomEngine(rd());
@@ -111,7 +111,7 @@ NeuralNetworkPointer NeuralNetwork::createChild() const
             NeuronData &currentNeuron = currentLayer.back();
             for(const Weight &weightData : neuronData)
             {
-                long double newSigma = weightData.sigma * std::expl(tau * gaussianDistribution(randomEngine));
+                long double newSigma = weightData.sigma * expl(tau * gaussianDistribution(randomEngine));
 
                 currentNeuron.append(Weight(weightData.weight +
                                             newSigma * gaussianDistribution(randomEngine), newSigma));
@@ -119,7 +119,7 @@ NeuralNetworkPointer NeuralNetwork::createChild() const
         }
     }
 
-    NNData->king = this->data->king * std::expl((1 / std::sqrtl(2)) * gaussianDistribution(randomEngine));
+    NNData->king = this->data->king * expl((1 / sqrtl(2)) * gaussianDistribution(randomEngine));
 
     return NeuralNetworkPointer(new NeuralNetwork(NNData));
 }

@@ -13,11 +13,11 @@ class ManualPlayer : public AbstractPlayer
 public:
     explicit ManualPlayer(Game::Side side, QObject *parent = 0);
 
-signals:
-    void wrongMove();
-
 public slots:
     void validateTurn(QVector<BoardPiece> rawBoardData);
+
+signals:
+    void wrongMove();
 
 protected:
     void executeTurn() override;
@@ -26,6 +26,6 @@ protected:
 private:
     QVector<Game::MovePointer> possibleMoves;
 };
-using ManualPlayerpointer = QSharedPointer<ManualPlayer>;
+using ManualPlayerPointer = QSharedPointer<ManualPlayer>;
 
 #endif // MANUALPLAYER_H

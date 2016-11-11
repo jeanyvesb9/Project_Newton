@@ -4,6 +4,7 @@
 #include <QObject>
 
 #include <algorithm>
+#include <limits>
 
 #include "src/player/abstractplayer.h"
 #include "src/game/board.h"
@@ -22,8 +23,10 @@ protected:
 private:
     NN::NeuralNetworkPointer nn;
     int maxSearchLevel;
+    Game::Side opSide;
 
-    long double minimax(Game::BoardPointer board, long double alpha, long double beta, bool maximisingPlayer, int maxLevel, int level = 1);
+    long double minimax(Game::BoardPointer board, long double alpha, long double beta, int ply, bool maximisingPlayer);
 };
+using NeuralNetworkPlayerPointer = QSharedPointer<NeuralNetworkPlayer>;
 
 #endif // NEURALNETWORKPLAYER_H

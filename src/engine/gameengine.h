@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QThread>
 
+#include "src/utilityfunctions.h"
 #include "src/player/abstractplayer.h"
 #include "src/game/board.h"
 
@@ -21,7 +22,7 @@ class GameEngine : public QObject
 public:
     explicit GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2, int tie = 100, QObject *parent = 0);
     explicit GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2,
-                        Game::BoardData board, int turnNumber, bool startingPlayer, int currentPlayer, int playtime,
+                        Game::BoardData board, int turnNumber, int startingPlayer, int currentPlayer, int playtime,
                         int tie = 100,
                         QObject *parent = 0);
 
@@ -62,11 +63,12 @@ private:
     AbstractPlayerPointer player2;
     QThread *player2_thread;
 
-    bool startingPlayer;
+    int startingPlayer;
     int currentPlayer;
 
     int playTime;
     QTime *time;
 };
+using GameEnginePointer = QSharedPointer<GameEngine>;
 
 #endif // GAMEENGINE_H

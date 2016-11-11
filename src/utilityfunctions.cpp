@@ -128,4 +128,5 @@ QString directionToText(Game::DirectionToken direction)
         return QStringLiteral("JBRight");
         break;
     }
+    return QStringLiteral("Invalid");
 }

@@ -3,51 +3,43 @@
 NeuralNetworkPlayer::NeuralNetworkPlayer(Game::Side side, NN::NeuralNetworkPointer nn, int maxSearchLevel, QObject *parent) : AbstractPlayer(side, parent),
    nn{nn}, maxSearchLevel{maxSearchLevel}
 {
-
+    opSide = side == Game::Side::PlayerSide ? Game::Side::OpponentSide : Game::Side::PlayerSide;
 }
 
 void NeuralNetworkPlayer::executeTurn()
 {
     Game::MovePointer bestMove;
-    Game::BoardPointer nBoard = board->treeBranchGenerator();
-    if(nBoard.isNull())
+    long double bestValue = std::numeric_limits<long double>::min();
+    QVector<Game::MovePointer> moves = board->getAllMoves(side);
+    if(moves.isEmpty())
     {
         finishTurn(bestMove);
         return;
     }
-    long double bestValue;
-    while(1)
+    long double alpha = std::numeric_limits<long double>::max();
+    for(auto &m : moves)
     {
-        Game::BoardData bd = nBoard->getBoardData();
-        long double childValue = minimax(nBoard, bestValue, 0, false, maxSearchLevel);
-        bestValue = std::max(bestValue, childValue);
-        if(beta <= bestValue)
+        Game::BoardPointer nBoard = board->executeMove(m);
+        alpha = -minimax(nBoard, std::numeric_limits<long double>::min(), alpha, maxSearchLevel - 1, false);
+        if(alpha > bestValue)
         {
-            break;
+            bestValue = alpha;
+            bestMove = m;
         }
-        nBoard = board->treeBranchGenerator();
-        if(nBoard.isNull())
-        {
-            break;
-        }
-    }
 
-    QApplication::processEvents();
-    mutex.lock();
-    if(hasToStop)
-    {
-        emit hasStopped();
-        return;
-    }
-    mutex.unlock();
+        QApplication::processEvents();
+        mutex.lock();
+        if(hasToStop)
+        {
+            finishTurn(Game::MovePointer());
+        }
+        mutex.unlock();
+        }
+
+    finishTurn(bestMove);
 }
 
-void NeuralNetworkPlayer::backgroundTask()
-{
-
-}
-
-long double NeuralNetworkPlayer::minimax(Game::BoardPointer board, long double alpha, long double beta, bool maximisingPlayer, int maxLevel, int level)
+long double NeuralNetworkPlayer::minimax(Game::BoardPointer board, long double alpha, long double beta, int ply, bool maximisingPlayer)
 {
     QApplication::processEvents();
     mutex.lock();
@@ -57,51 +49,34 @@ long double NeuralNetworkPlayer::minimax(Game::BoardPointer board, long double a
     }
     mutex.unlock();
 
-    long double bestValue;
-    Game::BoardPointer nBoard = board->treeBranchGenerator();
-    if(nBoard.isNull() || level == maxLevel)
+    Game::Side mvSide = maximisingPlayer ? this->side : this->opSide;
+    QVector<Game::MovePointer> moves = board->getAllMoves(mvSide);
+
+    if(ply == 0)
     {
         Game::BoardData bd = board->getBoardData();
-        bestValue = nn->processBoard(bd);
+        return nn->processBoard(bd);
     }
-    else if(maximisingPlayer)
-    {
-        bestValue = alpha;
-        while(1)
-        {
-            Game::BoardData bd = nBoard->getBoardData();
-            long double childValue = minimax(nBoard, bestValue, beta, false, maxLevel, level + 1);
-            bestValue = std::max(bestValue, childValue);
-            if(beta <= bestValue)
-            {
-                break;
-            }
-            nBoard = board->treeBranchGenerator();
-            if(nBoard.isNull())
-            {
-                break;
-            }
-        }
-    }
-    else
-    {
-        bestValue = beta;
-        while(1)
-        {
-            Game::BoardData bd = nBoard->getBoardData();
-            long double childValue = minimax(nBoard, alpha, bestValue, true, maxLevel, level + 1);
-            bestValue = std::min(bestValue, childValue);
-            if(bestValue <= alpha)
-            {
-                break;
-            }
-            nBoard = board->treeBranchGenerator();
-            if(nBoard.isNull())
-            {
-                break;
-            }
-        }
 
+    for(auto &mv : moves) //might crash due to empty moves vector
+    {
+        Game::BoardPointer nBoard = board->executeMove(mv);
+        long double currentEval = -minimax(nBoard, -beta, -alpha, ply - 1, !maximisingPlayer);
+
+        if(currentEval >= beta)
+        {
+            return beta;
+        }
+        if(currentEval > alpha)
+        {
+            alpha = currentEval;
+        }
     }
-    return bestValue;
+
+    return alpha;
+}
+
+void NeuralNetworkPlayer::backgroundTask()
+{
+
 }

@@ -11,9 +11,10 @@ void ManualPlayer::validateTurn(QVector<BoardPiece> rawBoardData)
     Game::MovePointer move;
     for(auto &m : possibleMoves)
     {
-        if(convertBoardToBoardPieceVector(m) == rawBoardData)
+        if(convertBoardToBoardPieceVector(board->executeMove(m)) == rawBoardData)
         {
             move = m;
+            break;
         }
     }
     if(move.isNull())
@@ -46,4 +47,9 @@ void ManualPlayer::executeTurn()
 void ManualPlayer::backgroundTask()
 {
 
+}
+
+void ManualPlayer::wrongMove()
+{
+    //DUE TO BUG IN moc
 }

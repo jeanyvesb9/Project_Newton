@@ -1,7 +1,7 @@
 #include "abstractplayer.h"
 
 AbstractPlayer::AbstractPlayer(Game::Side side, QObject *parent) : QObject(parent),
-    side{side}, running{false}, hasToBegin{false}, backgroundTaskStatus{true}, hasToStop{false}
+    hasToStop{false}, side{side}, running{false}, hasToBegin{false}, backgroundTaskStatus{true}
 {
 
 }
@@ -62,6 +62,11 @@ void AbstractPlayer::stopAndDelete()
     mutex.lock();
     hasToStop = true;
     mutex.unlock();
+}
+
+void AbstractPlayer::backgroundTask()
+{
+
 }
 
 void AbstractPlayer::finishTurn(Game::MovePointer move)

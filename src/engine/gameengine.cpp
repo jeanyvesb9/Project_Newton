@@ -1,8 +1,43 @@
 #include "gameengine.h"
 
 GameEngine::GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2, int tie, QObject *parent) : QObject(parent),
-    board{Game::Board::defaultBoard()}, tieValue{tie}, turnNumber{1}, player1_thread{new QThread(this)}, player2_thread{new QThread(this)},
-    player1{p1}, player2{p2}, time{new QTime()}
+    board{Game::Board::defaultBoard()}, tieValue{tie}, turnNumber{1}, player1{p1}, player1_thread{new QThread(this)}, player2{p2},
+    player2_thread{new QThread(this)}, time{new QTime()}
+{
+    startingPlayer = std::rand() + 1;
+    currentPlayer = startingPlayer;
+
+    QObject::connect(player1_thread, &QThread::started, player1.data(), &AbstractPlayer::launchBackgroundTask);
+    QObject::connect(player1.data(), &AbstractPlayer::finishedTurn, this, &GameEngine::player1_hasFinished);
+    QObject::connect(player1.data(), &AbstractPlayer::hasStopped, player1_thread, &QThread::quit);
+    player1->moveToThread(player1_thread);
+    player1_thread->start();
+
+    QObject::connect(player2_thread, &QThread::started, player2.data(), &AbstractPlayer::launchBackgroundTask);
+    QObject::connect(player2.data(), &AbstractPlayer::finishedTurn, this, &GameEngine::player2_hasFinished);
+    QObject::connect(player2.data(), &AbstractPlayer::hasStopped, player2_thread, &QThread::quit);
+    player2->moveToThread(player2_thread);
+    player2_thread->start();
+
+    if(startingPlayer == 1)
+    {
+        player1->startTurn(board->getBoardData());
+    }
+    else
+    {
+        player2->startTurn(board->getBoardData());
+    }
+
+    time->restart();
+}
+
+GameEngine::GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2,
+                       Game::BoardData board, int turnNumber, int startingPlayer, int currentPlayer, int playtime,
+                       int tie,
+                       QObject *parent) : QObject(parent),
+    board{Game::BoardPointer(new Game::Board(board))}, tieValue{tie}, turnNumber{turnNumber},
+    player1{p1}, player1_thread{new QThread(this)}, player2{p2}, player2_thread{new QThread(this)},
+    startingPlayer{startingPlayer}, currentPlayer{currentPlayer}, playTime{playtime}, time{new QTime()}
 {
     QObject::connect(player1_thread, &QThread::started, player1.data(), &AbstractPlayer::launchBackgroundTask);
     QObject::connect(player1.data(), &AbstractPlayer::finishedTurn, this, &GameEngine::player1_hasFinished);
@@ -16,19 +51,16 @@ GameEngine::GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2, int t
     player2->moveToThread(player2_thread);
     player2_thread->start();
 
-    time->restart();
-}
+    if(startingPlayer == 1)
+    {
+        player1->startTurn(this->board->getBoardData());
+    }
+    else
+    {
+        player2->startTurn(this->board->getBoardData());
+    }
 
-GameEngine::GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2,
-                       Game::BoardData board, int turnNumber, bool startingPlayer, int currentPlayer, int playtime,
-                       int tie,
-                       QObject *parent) : QObject(parent),
-    tieValue{tie}, turnNumber{turnNumber}, player1_thread{new QThread(this)}, player2_thread{new QThread(this)},
-    player1{p1}, player2{p2}, board{Game::BoardPointer(new Game::Board(board))},
-    startingPlayer{startingPlayer}, currentPlayer{currentPlayer}, playTime{playtime}, time{new QTime()}
-{
-    time->restart();
-}
+    time->restart();}
 
 GameEngine::~GameEngine()
 {
@@ -40,6 +72,12 @@ GameEngine::~GameEngine()
 
 void GameEngine::player1_hasFinished(Game::MovePointer move, int time)
 {
+    QVector<Game::MovePointer> mvs;
+    mvs <<move;
+    qDebug() <<"P1:";
+    qDebug().noquote() <<printMoveTree(mvs);
+
+    Q_UNUSED(time);
     PlayerMovePointer pMove = PlayerMovePointer(new PlayerMove());
     pMove->player = 1;
     pMove->move = move;
@@ -63,6 +101,12 @@ void GameEngine::player1_hasFinished(Game::MovePointer move, int time)
 
 void GameEngine::player2_hasFinished(Game::MovePointer move, int time)
 {
+    QVector<Game::MovePointer> mvs;
+    mvs <<move;
+    qDebug() <<"P2:";
+    qDebug().noquote() <<printMoveTree(mvs);
+
+    Q_UNUSED(time);
     PlayerMovePointer pMove = PlayerMovePointer(new PlayerMove());
     pMove->player = 2;
     pMove->move = move;
