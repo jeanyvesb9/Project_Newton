@@ -1032,18 +1032,20 @@ QVector<MovePointer> Board::getAllMovesForCell(Cell cell, bool onlyJumps) const
     if(piece == Piece::Empty)
         return moves;
 
-    if(!onlyJumps)
+    moves <<getCompleteMove(cell, DirectionToken::JFLeft);
+    moves <<getCompleteMove(cell, DirectionToken::JFRight);
+    moves <<getCompleteMove(cell, DirectionToken::JBLeft);
+    moves <<getCompleteMove(cell, DirectionToken::JBRight);
+
+    //HACK HACK HACK: TODO: FIX IN ISMOVEVALID [WITH CACHING];
+
+    if(!onlyJumps && moves.isEmpty())
     {
         moves <<getCompleteMove(cell, DirectionToken::FLeft);
         moves <<getCompleteMove(cell, DirectionToken::FRight);
         moves <<getCompleteMove(cell, DirectionToken::BLeft);
         moves <<getCompleteMove(cell, DirectionToken::BRight);
     }
-
-    moves <<getCompleteMove(cell, DirectionToken::JFLeft);
-    moves <<getCompleteMove(cell, DirectionToken::JFRight);
-    moves <<getCompleteMove(cell, DirectionToken::JBLeft);
-    moves <<getCompleteMove(cell, DirectionToken::JBRight);
 
     return moves;
 }
@@ -1185,9 +1187,27 @@ QVector<MovePointer> Board::getCompleteMove(Cell cell, DirectionToken direction)
     return moves;
 }
 
+QVector<Cell> Board::getMovePathCells(MovePointer move) const
+{
+    QVector<Cell> ret;
+    while(1)
+    {
+        ret.append(getNewCell(move, false));
+        if(move->concatenatedMove.isNull())
+        {
+            break;
+        }
+        else
+        {
+            move = move->concatenatedMove;
+        }
+    }
+    return ret;
+}
+
 BoardPointer Board::executeMove(MovePointer move, BoardModificationPointer mdf) const
 {
-    if(!this->isMoveValid(move))
+    if(move.isNull() || !this->isMoveValid(move))
     {
         return BoardPointer();
     }
@@ -1251,7 +1271,7 @@ QVector<MovePointer> Board::getAllMoves(Side side) const
     return ret;
 }
 
-BoardPointer Board::treeBranchGenerator()
+MovePointer Board::treeBranchGenerator(Side side)
 {
     constexpr static DirectionToken directions[8] = { DirectionToken::FLeft, DirectionToken::FRight,
                                             DirectionToken::BLeft, DirectionToken::BRight,
@@ -1269,13 +1289,19 @@ BoardPointer Board::treeBranchGenerator()
         }
         int directionNumber = treeCellDirectionNumber % 8;
         Cell cell = Cell::fromNum(treeCellDirectionNumber / 8);
+        if((side == Side::PlayerSide && (data.at(cell.toCellNum()) == Piece::OpPlayer || data.at(cell.toCellNum()) == Piece::OpKing)) ||
+                (side == Side::OpponentSide && (data.at(cell.toCellNum()) == Piece::Player || data.at(cell.toCellNum()) == Piece::King)))
+        {
+            continue;
+        }
+
         //qDebug() <<treeCellDirectionNumber <<" " <<cell.column <<" " <<cell.row;
         if(directionNumber < 4)
         {
             QVector<MovePointer> moves = getCompleteMove(cell, directions[directionNumber]);
             if(!moves.isEmpty())
             {
-                return executeMove(moves.at(0));
+                return moves.at(0);
             }
         }
         else
@@ -1288,11 +1314,11 @@ BoardPointer Board::treeBranchGenerator()
             {
                 MovePointer move = treeJumpBuffer.first();
                 treeJumpBuffer.removeFirst();
-                return executeMove(move);
+                return move;
             }
         }
     }
-    return BoardPointer();
+    return MovePointer();
 }
 
 void Board::resetTreeBranchGenerator()
@@ -1301,7 +1327,7 @@ void Board::resetTreeBranchGenerator()
     treeJumpBuffer.clear();
 }
 
-QString Board::getBoardString() const
+QString Board::toBoardString() const
 {
     std::wstring ret;
     ret.append(L"\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\n");

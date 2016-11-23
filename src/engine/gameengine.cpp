@@ -1,21 +1,26 @@
 #include "gameengine.h"
 
 GameEngine::GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2, int tie, QObject *parent) : QObject(parent),
-    board{Game::Board::defaultBoard()}, tieValue{tie}, turnNumber{1}, player1{p1}, player1_thread{new QThread(this)}, player2{p2},
-    player2_thread{new QThread(this)}, time{new QTime()}
+    hasToStop{false}, board{Game::Board::defaultBoard()}, tieValue{tie}, turnNumber{1}, player1{p1}, player1_thread{new QThread()}, player2{p2},
+    player2_thread{new QThread()}, time{new QTime()}
 {
-    startingPlayer = std::rand() + 1;
+    std::random_device rd;
+    std::mt19937 rng(rd());
+    std::uniform_int_distribution<int> uni(1, 2);
+    startingPlayer = uni(rng);
     currentPlayer = startingPlayer;
 
     QObject::connect(player1_thread, &QThread::started, player1.data(), &AbstractPlayer::launchBackgroundTask);
     QObject::connect(player1.data(), &AbstractPlayer::finishedTurn, this, &GameEngine::player1_hasFinished);
     QObject::connect(player1.data(), &AbstractPlayer::hasStopped, player1_thread, &QThread::quit);
+    QObject::connect(player1_thread, &QThread::finished, player1_thread, &QThread::deleteLater);
     player1->moveToThread(player1_thread);
     player1_thread->start();
 
     QObject::connect(player2_thread, &QThread::started, player2.data(), &AbstractPlayer::launchBackgroundTask);
     QObject::connect(player2.data(), &AbstractPlayer::finishedTurn, this, &GameEngine::player2_hasFinished);
     QObject::connect(player2.data(), &AbstractPlayer::hasStopped, player2_thread, &QThread::quit);
+    QObject::connect(player2_thread, &QThread::finished, player2_thread, &QThread::deleteLater);
     player2->moveToThread(player2_thread);
     player2_thread->start();
 
@@ -35,19 +40,21 @@ GameEngine::GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2,
                        Game::BoardData board, int turnNumber, int startingPlayer, int currentPlayer, int playtime,
                        int tie,
                        QObject *parent) : QObject(parent),
-    board{Game::BoardPointer(new Game::Board(board))}, tieValue{tie}, turnNumber{turnNumber},
-    player1{p1}, player1_thread{new QThread(this)}, player2{p2}, player2_thread{new QThread(this)},
+    hasToStop{false}, board{Game::BoardPointer(new Game::Board(board))}, tieValue{tie}, turnNumber{turnNumber},
+    player1{p1}, player1_thread{new QThread()}, player2{p2}, player2_thread{new QThread()},
     startingPlayer{startingPlayer}, currentPlayer{currentPlayer}, playTime{playtime}, time{new QTime()}
 {
     QObject::connect(player1_thread, &QThread::started, player1.data(), &AbstractPlayer::launchBackgroundTask);
     QObject::connect(player1.data(), &AbstractPlayer::finishedTurn, this, &GameEngine::player1_hasFinished);
-    QObject::connect(player1.data(), &AbstractPlayer::hasStopped, player1_thread, &QThread::quit);
+    QObject::connect(player1_thread, &QThread::finished, player1_thread, &QThread::quit);
+    //QObject::connect(player1.data(), &AbstractPlayer::hasStopped, player1_thread, &QThread::quit);
     player1->moveToThread(player1_thread);
     player1_thread->start();
 
     QObject::connect(player2_thread, &QThread::started, player2.data(), &AbstractPlayer::launchBackgroundTask);
     QObject::connect(player2.data(), &AbstractPlayer::finishedTurn, this, &GameEngine::player2_hasFinished);
-    QObject::connect(player2.data(), &AbstractPlayer::hasStopped, player2_thread, &QThread::quit);
+    QObject::connect(player1_thread, &QThread::finished, player1_thread, &QThread::deleteLater);
+    //QObject::connect(player2.data(), &AbstractPlayer::hasStopped, player2_thread, &QThread::quit);
     player2->moveToThread(player2_thread);
     player2_thread->start();
 
@@ -64,6 +71,16 @@ GameEngine::GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2,
 
 GameEngine::~GameEngine()
 {
+    if(player1_thread)
+    {
+        //player1_thread->quit();
+        //player1_thread->deleteLater();
+    }
+    if(player2_thread)
+    {
+        //player2_thread->quit();
+        //player2_thread->deleteLater();
+    }
     if(time)
     {
         delete time;
@@ -72,28 +89,35 @@ GameEngine::~GameEngine()
 
 void GameEngine::player1_hasFinished(Game::MovePointer move, int time)
 {
-    QVector<Game::MovePointer> mvs;
-    mvs <<move;
-    qDebug() <<"P1:";
-    qDebug().noquote() <<printMoveTree(mvs);
-
     Q_UNUSED(time);
+
+    if(move.isNull())
+    {
+        stopGame();
+        emit hasWon(2);
+        return;
+    }
+
     PlayerMovePointer pMove = PlayerMovePointer(new PlayerMove());
     pMove->player = 1;
     pMove->move = move;
     pMove->boardMdf = Game::BoardModificationPointer(new Game::BoardModification());
-    board->executeMove(move, pMove->boardMdf);
+    board = board->executeMove(move, pMove->boardMdf);
+    //qDebug().noquote() << board->toBoardString();
     emit madeMove(pMove);
 
     if(getPlayer2_removed() == 12)
     {
         stopGame();
         emit hasWon(1);
+        return;
     }
     turnNumber++;
-    if(turnNumber == tieValue)
+    if(tieValue != -1 && turnNumber == tieValue)
     {
+        stopGame();
         emit hasTied();
+        return;
     }
     currentPlayer = 2;
     player2->startTurn(board->getBoardData());
@@ -101,28 +125,35 @@ void GameEngine::player1_hasFinished(Game::MovePointer move, int time)
 
 void GameEngine::player2_hasFinished(Game::MovePointer move, int time)
 {
-    QVector<Game::MovePointer> mvs;
-    mvs <<move;
-    qDebug() <<"P2:";
-    qDebug().noquote() <<printMoveTree(mvs);
-
     Q_UNUSED(time);
+
+    if(move.isNull())
+    {
+        stopGame();
+        emit hasWon(1);
+        return;
+    }
+
     PlayerMovePointer pMove = PlayerMovePointer(new PlayerMove());
     pMove->player = 2;
     pMove->move = move;
     pMove->boardMdf = Game::BoardModificationPointer(new Game::BoardModification());
-    board->executeMove(move, pMove->boardMdf);
+    board = board->executeMove(move, pMove->boardMdf);
+    //qDebug().noquote() << board->toBoardString();
     emit madeMove(pMove);
 
     if(getPlayer1_removed() == 12)
     {
         stopGame();
         emit hasWon(2);
+        return;
     }
     turnNumber++;
-    if(turnNumber == tieValue)
+    if(tieValue != -1 && turnNumber == tieValue)
     {
+        stopGame();
         emit hasTied();
+        return;
     }
     currentPlayer = 1;
     player1->startTurn(board->getBoardData());
@@ -151,9 +182,10 @@ int GameEngine::getWinningPlayer() const
 
 void GameEngine::stopGame()
 {
-    player1->stopAndDelete();
-    player2->stopAndDelete();
+    player1->stop();
+    player2->stop();
     playTime = playTime + time->elapsed();
+    hasToStop = true;
     delete time;
     time = nullptr;
 }
@@ -191,4 +223,9 @@ bool GameEngine::getStartingPlayer() const
 Game::BoardPointer GameEngine::getBoard() const
 {
     return board;
+}
+
+Game::BoardPointer *GameEngine::getBoardPtr()
+{
+    return &board;
 }

@@ -1,12 +1,7 @@
 <RCC>
     <qresource prefix="/">
-        <file>qml/Board.qml</file>
-        <file>qml/main.qml</file>
-        <file>qml/Page1.qml</file>
-        <file>qml/Page1Form.ui.qml</file>
         <file>assets/fonts/AdobeClean-Light.otf</file>
         <file>assets/fonts/segoeuil.ttf</file>
-        <file>qml/Fonts.qml</file>
-        <file>qml/MainView.qml</file>
+        <file>assets/images/crown.svg</file>
     </qresource>
 </RCC>

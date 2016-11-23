@@ -34,30 +34,34 @@ class Board : public QObject
 public:
     Board(BoardData data, QObject *parent = 0);
 
-    bool isMoveValid(MovePointer move) const;
     Cell getNewCell(MovePointer move, bool recursive = true) const;
     QVector<Cell> getRemovedCells(MovePointer move) const;
     QVector<MovePointer> getAllMovesForCell(Cell cell, bool onlyJumps = false) const; //allowSingleJumps allows for single jump in multiple jump context
     QVector<MovePointer> getCompleteMove(Cell cell, DirectionToken direction) const;
+    QVector<Cell> getMovePathCells(MovePointer move) const;
     BoardPointer executeMove(MovePointer move, BoardModificationPointer mdf = BoardModificationPointer()) const;
     QVector<MovePointer> getAllMoves(Side side = Side::Both) const;
-    BoardPointer treeBranchGenerator();
+    MovePointer treeBranchGenerator(Side side);
     void resetTreeBranchGenerator();
 
     inline BoardData getBoardData() const { return data; }
 
-    QString getBoardString() const;
+    QString toBoardString() const;
 
     static BoardPointer defaultBoard();
 
 private:
     BoardData data;
+
     QPair<qint8, qint8> jumpNewCellModifier(MovePointer move, bool recursive = true) const; //QPair<column, row>
+    bool isMoveValid(MovePointer move) const;
 
     int treeCellDirectionNumber;
     QVector<MovePointer> treeJumpBuffer;
 };
 
 }
+
+Q_DECLARE_METATYPE(Game::BoardPointer);
 
 #endif // BOARD_H

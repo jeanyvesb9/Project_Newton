@@ -25,6 +25,7 @@ void AbstractPlayer::launchBackgroundTask()
         mutex.lock();
         if(hasToStop)
         {
+            mutex.unlock();
             emit hasStopped();
             return;
         }
@@ -32,12 +33,16 @@ void AbstractPlayer::launchBackgroundTask()
         {
             hasToBegin = false;
             running = true;
+            mutex.unlock();
             executeTurn();
+            mutex.lock();
             running = false;
         }
         if(backgroundTaskStatus)
         {
+            mutex.unlock();
             backgroundTask();
+            mutex.lock();
         }
         mutex.unlock();
     }
@@ -57,7 +62,7 @@ void AbstractPlayer::resumeBackgroundTask()
     mutex.unlock();
 }
 
-void AbstractPlayer::stopAndDelete()
+void AbstractPlayer::stop()
 {
     mutex.lock();
     hasToStop = true;

@@ -1,4 +1,4 @@
-QT += sql widgets gui core #qml quick
+QT += sql widgets gui core serialport
 
 CONFIG += c++14
 
@@ -10,13 +10,18 @@ SOURCES += \
     src/neuralNetwork/neuralnetworkmanager.cpp \
     src/utilityfunctions.cpp \
     src/training/trainingengine.cpp \
-    src/ui/mainwindow.cpp \
     src/player/abstractplayer.cpp \
     src/engine/gameengine.cpp \
     src/player/manualplayer.cpp \
-    src/playing/playengine.cpp \
     src/camera/cameraanalyser.cpp \
-    src/player/neuralnetworkplayer.cpp
+    src/player/neuralnetworkplayer.cpp \
+    src/arduino/arduinoserial.cpp \
+    src/ui/nntraining.cpp \
+    src/ui/initialwindow.cpp \
+    src/ui/boardwidget.cpp \
+    src/ui/aspectratiowidget.cpp \
+    src/ui/playwindow.cpp \
+    src/game/gamefile.cpp
 
 RESOURCES += \
     resources.qrc
@@ -36,13 +41,20 @@ HEADERS += \
     src/training/trainingengine.h \
     src/training/trainingstructs.h \
     src/game/gamestructs.h \
-    src/ui/mainwindow.h \
     src/player/abstractplayer.h \
     src/engine/gameengine.h \
     src/player/manualplayer.h \
-    src/playing/playengine.h \
     src/camera/cameraanalyser.h \
-    src/player/neuralnetworkplayer.h
+    src/player/neuralnetworkplayer.h \
+    src/arduino/arduinoserial.h \
+    src/ui/nntraining.h \
+    src/ui/initialwindow.h \
+    src/ui/boardwidget.h \
+    src/ui/aspectratiowidget.h \
+    src/ui/playwindow.h \
+    src/game/gamefile.h
 
 FORMS += \
-    src/ui/mainwindow.ui
+    src/ui/nntraining.ui \
+    src/ui/initialwindow.ui \
+    src/ui/playwindow.ui

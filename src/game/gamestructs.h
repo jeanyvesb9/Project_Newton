@@ -1,6 +1,7 @@
 #ifndef MOVE_H
 #define MOVE_H
 
+#include <QMetaType>
 #include <QVector>
 #include <QtGlobal>
 #include <QSharedPointer>
@@ -19,6 +20,8 @@ struct Cell {
     inline quint8 toCellNum() const { return column + row * 4; }
     inline static Cell fromNum(quint8 cellNum) { return Cell(cellNum % 4, cellNum / 4); }
     inline QString toQString() const { return QStringLiteral("(").append(QString::number(column)).append(QStringLiteral(", ")).append(QString::number(row)).append(QStringLiteral(")")); }
+    bool operator <(const Cell &c) const { return toCellNum() < c.toCellNum(); }
+    bool operator ==(const Cell &c) const { return row == c.row && column == c.column; }
 };
 using CellPointer = QSharedPointer<Cell>;
 
@@ -26,7 +29,6 @@ enum class DirectionToken { FRight, FLeft, BRight, BLeft, JFRight, JFLeft, JBRig
 
 struct Move;
 using MovePointer = QSharedPointer<Move>;
-
 struct Move {
     Move() = default;
     inline Move(Cell cell, DirectionToken dir, MovePointer concat = MovePointer()) : cell{cell}, direction{dir}, concatenatedMove{concat} {}
@@ -35,7 +37,8 @@ struct Move {
     MovePointer concatenatedMove;
 };
 
-
 }
+
+Q_DECLARE_METATYPE(Game::MovePointer)
 
 #endif // MOVE_H

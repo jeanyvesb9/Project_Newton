@@ -11,7 +11,7 @@ NeuralNetworkManager::NeuralNetworkManager(QObject *parent)
 NeuralNetworkManager::NeuralNetworkManager(QString file, QObject *parent)
     : QObject(parent), flags{0}
 {
-    db = QSqlDatabase::addDatabase("QSQLITE");
+    db = QSqlDatabase::addDatabase("QSQLITE", "nnDb");
     db.setDatabaseName(file);
     if(!db.open())
     {
@@ -28,7 +28,7 @@ NeuralNetworkManager::NeuralNetworkManager(QString file, QObject *parent)
 
 bool NeuralNetworkManager::saveAndClose()
 {
-    db.close();
+    QSqlDatabase::removeDatabase("nnDb");
     flags = 0;
     return true;
 }
@@ -184,14 +184,6 @@ NeuralNetworkManagerPointer NeuralNetworkManager::createNewNNFamily(QString file
     }
     query.clear();
 
-    query.prepare(QStringLiteral("INSERT INTO generalData VALUES (:date, 0)"));
-    query.bindValue(QStringLiteral(":date"), QDateTime::currentMSecsSinceEpoch());
-    if(!query.exec())
-    {
-        //TODO: RAISE EXCEPTION
-    }
-    query.clear();
-
     ptr->topology = topology;
     for(auto layer : topology)
     {
@@ -216,6 +208,15 @@ NeuralNetworkManagerPointer NeuralNetworkManager::createNewNNFamily(QString file
         ptr->activeNeuralNetworks.append(nn);
         ptr->saveNNToDB(nn);
     }
+
+    query.prepare(QStringLiteral("INSERT INTO generalData VALUES (:date, 0, 1)"));
+    query.bindValue(QStringLiteral(":date"), QDateTime::currentMSecsSinceEpoch());
+    if(!query.exec())
+    {
+        //TODO: RAISE EXCEPTION
+    }
+    query.clear();
+    ptr->getBestNNPerformer();
 
     ptr->flags |= NNManagerFlags::valid;
     return ptr;

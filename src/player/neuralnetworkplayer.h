@@ -5,11 +5,13 @@
 
 #include <algorithm>
 #include <limits>
+#include <vector>
 
 #include "src/player/abstractplayer.h"
 #include "src/game/board.h"
 #include "src/neuralNetwork/neuralnetwork.h"
 #include "src/camera/cameraanalyser.h"
+#include "src/utilityfunctions.h"
 
 class NeuralNetworkPlayer : public AbstractPlayer
 {

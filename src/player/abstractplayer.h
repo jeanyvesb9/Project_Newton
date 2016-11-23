@@ -29,7 +29,7 @@ public slots:
     void pauseBackgroundTask();
     void resumeBackgroundTask();
 
-    void stopAndDelete();
+    void stop();
 
 protected:
     QMutex mutex;

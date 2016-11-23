@@ -81,7 +81,10 @@ QString printMoveTree(QVector<Game::MovePointer> moves)
     QMap<QString, QVector<Game::MovePointer>> mvOrd;
     for(auto &move : moves)
     {
-        mvOrd[move->cell.toQString()].append(move);
+        if(!move.isNull())
+        {
+            mvOrd[move->cell.toQString()].append(move);
+        }
     }
 
     QString rtn;

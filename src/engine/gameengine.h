@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QThread>
 
+#include <random>
+
 #include "src/utilityfunctions.h"
 #include "src/player/abstractplayer.h"
 #include "src/game/board.h"
@@ -29,6 +31,7 @@ public:
     ~GameEngine();
 
     Game::BoardPointer getBoard() const;
+    Game::BoardPointer* getBoardPtr();
 
     bool getStartingPlayer() const;
     bool getCurrentPlayer() const;
@@ -45,6 +48,7 @@ signals:
     void madeMove(PlayerMovePointer move);
     void hasTied();
     void hasWon(int winningPlayer);
+    void hasEnded();
 
 public slots:
     void stopGame();
@@ -54,6 +58,9 @@ private slots:
     void player2_hasFinished(Game::MovePointer move, int time);
 
 private:
+    bool isRunning;
+    bool hasToStop;
+
     Game::BoardPointer board;
     int tieValue;
     int turnNumber;
