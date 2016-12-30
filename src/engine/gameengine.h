@@ -10,10 +10,13 @@
 #include "src/player/abstractplayer.h"
 #include "src/game/board.h"
 
+enum class Player { None = 0, Player1, Player2 };
+
 struct PlayerMove
 {
-    unsigned int player;
+    Player player;
     Game::MovePointer move;
+    qint64 time;
     Game::BoardModificationPointer boardMdf;
 };
 using PlayerMovePointer = QSharedPointer<PlayerMove>;
@@ -24,8 +27,8 @@ class GameEngine : public QObject
 public:
     explicit GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2, int tie = 100, QObject *parent = 0);
     explicit GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2,
-                        Game::BoardData board, int turnNumber, int startingPlayer, int currentPlayer, int playtime,
-                        int tie = 100,
+                        Game::BoardData board, int turnNumber, Player currentPlayer, quint64 playtime,
+                        int tie = TieValue::NoTie,
                         QObject *parent = 0);
 
     ~GameEngine();
@@ -33,8 +36,7 @@ public:
     Game::BoardPointer getBoard() const;
     Game::BoardPointer* getBoardPtr();
 
-    bool getStartingPlayer() const;
-    bool getCurrentPlayer() const;
+    Player getCurrentPlayer() const;
 
     int getPlayer1_removed() const;
     int getPlayer1_kings() const;
@@ -42,16 +44,22 @@ public:
     int getPlayer2_kings() const;
 
     int getPlayTime() const;
-    int getWinningPlayer() const;
+    Player getWinningPlayer() const;
+
+    enum TieValue { NoTie = -1 };
 
 signals:
-    void madeMove(PlayerMovePointer move);
+    void madeMove(PlayerMovePointer move, Game::BoardData board);
     void hasTied();
-    void hasWon(int winningPlayer);
+    void hasWon(Player winningPlayer);
     void hasEnded();
+    void oneSecondTimerTick(int time);
 
 public slots:
     void stopGame();
+
+protected:
+    void timerEvent(QTimerEvent *event) override;
 
 private slots:
     void player1_hasFinished(Game::MovePointer move, int time);
@@ -59,7 +67,6 @@ private slots:
 
 private:
     bool isRunning;
-    bool hasToStop;
 
     Game::BoardPointer board;
     int tieValue;
@@ -70,11 +77,10 @@ private:
     AbstractPlayerPointer player2;
     QThread *player2_thread;
 
-    int startingPlayer;
-    int currentPlayer;
+    Player currentPlayer;
 
-    int playTime;
-    QTime *time;
+    int timerId;
+    quint64 playTime;
 };
 using GameEnginePointer = QSharedPointer<GameEngine>;
 

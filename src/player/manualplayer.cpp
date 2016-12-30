@@ -8,7 +8,7 @@ ManualPlayer::ManualPlayer(Game::Side side, QObject *parent) : AbstractPlayer(si
 void ManualPlayer::validateTurn(QVector<BoardPiece> rawBoardData)
 {
     mutex.lock();
-    Game::MovePointer move;
+    move.reset();
     for(auto &m : possibleMoves)
     {
         if(convertBoardToBoardPieceVector(board->executeMove(m)) == rawBoardData)
@@ -23,21 +23,28 @@ void ManualPlayer::validateTurn(QVector<BoardPiece> rawBoardData)
     }
     else
     {
-        finishTurn(move);
+        hasFinished = true;
     }
     mutex.unlock();
 }
 
 void ManualPlayer::executeTurn()
 {
+    hasFinished = false;
     possibleMoves = board->getAllMoves(side);
     while(true)
     {
         QApplication::processEvents();
         mutex.lock();
+        if(hasFinished)
+        {
+            finishTurn(move);
+            mutex.unlock();
+            return;
+        }
         if(hasToStop)
         {
-            emit hasStopped();
+            mutex.unlock();
             return;
         }
         mutex.unlock();
@@ -47,9 +54,4 @@ void ManualPlayer::executeTurn()
 void ManualPlayer::backgroundTask()
 {
 
-}
-
-void ManualPlayer::wrongMove()
-{
-    //DUE TO BUG IN moc
 }

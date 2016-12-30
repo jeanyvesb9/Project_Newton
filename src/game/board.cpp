@@ -2,9 +2,8 @@
 
 using namespace Game;
 
-Board::Board(BoardData data, QObject *parent)
-    : QObject(parent),
-      data{data}, treeCellDirectionNumber{-1}
+Board::Board(BoardData data)
+    : data{data}
 {
 
 }
@@ -1190,17 +1189,23 @@ QVector<MovePointer> Board::getCompleteMove(Cell cell, DirectionToken direction)
 QVector<Cell> Board::getMovePathCells(MovePointer move) const
 {
     QVector<Cell> ret;
-    while(1)
+    ret << getNewCell(move, false);
+    if(move->concatenatedMove)
     {
-        ret.append(getNewCell(move, false));
-        if(move->concatenatedMove.isNull())
-        {
-            break;
-        }
-        else
-        {
-            move = move->concatenatedMove;
-        }
+        MovePointer m(new Move(move->cell, move->direction));
+        ret << __getMovePathCells_recursive(move->concatenatedMove, executeMove(m));
+    }
+    return ret;
+}
+
+QVector<Cell> Board::__getMovePathCells_recursive(MovePointer move, BoardPointer board) const
+{
+    QVector<Cell> ret;
+    ret << board->getNewCell(move, false);
+    if(move->concatenatedMove)
+    {
+        MovePointer m(new Move(move->cell, move->direction));
+        ret << __getMovePathCells_recursive(move->concatenatedMove, board->executeMove(m));
     }
     return ret;
 }
@@ -1256,75 +1261,44 @@ BoardPointer Board::executeMove(MovePointer move, BoardModificationPointer mdf) 
 QVector<MovePointer> Board::getAllMoves(Side side) const
 {
     QVector<MovePointer> ret;
+    bool jumpFlag = false;
+    int noJumpRem;
+
     for(int i = 0; i < 32; i++)
     {
         Cell cell = Cell::fromNum(i);
         if((side == Side::PlayerSide || side == Side::Both) && (data.at(cell.toCellNum()) == Piece::Player || data.at(cell.toCellNum()) == Piece::King))
         {
-            ret << getAllMovesForCell(cell);
+            for(auto &m : getAllMovesForCell(cell, jumpFlag))
+            {
+                if(!jumpFlag && (m->direction == DirectionToken::JFLeft || m->direction == DirectionToken::JFRight ||
+                        m->direction == DirectionToken::JBLeft || m->direction == DirectionToken::JBRight))
+                {
+                    jumpFlag = true;
+                    noJumpRem = ret.size();
+                }
+                ret << m;
+            }
         }
         else if ((side == Side::OpponentSide || side == Side::Both) && (data.at(cell.toCellNum()) == Piece::OpPlayer || data.at(cell.toCellNum()) == Piece::OpKing))
         {
-            ret << getAllMovesForCell(cell);
+            for(auto &m : getAllMovesForCell(cell, jumpFlag))
+            {
+                if(!jumpFlag && (m->direction == DirectionToken::JFLeft || m->direction == DirectionToken::JFRight ||
+                        m->direction == DirectionToken::JBLeft || m->direction == DirectionToken::JBRight))
+                {
+                    jumpFlag = true;
+                    noJumpRem = ret.size();
+                }
+                ret << m;
+            }
         }
+    }
+    if(jumpFlag)
+    {
+        ret.remove(0, noJumpRem);
     }
     return ret;
-}
-
-MovePointer Board::treeBranchGenerator(Side side)
-{
-    constexpr static DirectionToken directions[8] = { DirectionToken::FLeft, DirectionToken::FRight,
-                                            DirectionToken::BLeft, DirectionToken::BRight,
-                                            DirectionToken::JFLeft, DirectionToken::JFRight,
-                                            DirectionToken::JBLeft, DirectionToken::JBRight };
-    while(1)
-    {
-        if(treeJumpBuffer.isEmpty() && treeCellDirectionNumber != 256)
-        {
-            treeCellDirectionNumber++;
-        }
-        if(treeCellDirectionNumber == 256)
-        {
-            break;
-        }
-        int directionNumber = treeCellDirectionNumber % 8;
-        Cell cell = Cell::fromNum(treeCellDirectionNumber / 8);
-        if((side == Side::PlayerSide && (data.at(cell.toCellNum()) == Piece::OpPlayer || data.at(cell.toCellNum()) == Piece::OpKing)) ||
-                (side == Side::OpponentSide && (data.at(cell.toCellNum()) == Piece::Player || data.at(cell.toCellNum()) == Piece::King)))
-        {
-            continue;
-        }
-
-        //qDebug() <<treeCellDirectionNumber <<" " <<cell.column <<" " <<cell.row;
-        if(directionNumber < 4)
-        {
-            QVector<MovePointer> moves = getCompleteMove(cell, directions[directionNumber]);
-            if(!moves.isEmpty())
-            {
-                return moves.at(0);
-            }
-        }
-        else
-        {
-            if(treeJumpBuffer.isEmpty())
-            {
-                treeJumpBuffer = getCompleteMove(cell, directions[directionNumber]);
-            }
-            else
-            {
-                MovePointer move = treeJumpBuffer.first();
-                treeJumpBuffer.removeFirst();
-                return move;
-            }
-        }
-    }
-    return MovePointer();
-}
-
-void Board::resetTreeBranchGenerator()
-{
-    treeCellDirectionNumber = -1;
-    treeJumpBuffer.clear();
 }
 
 QString Board::toBoardString() const

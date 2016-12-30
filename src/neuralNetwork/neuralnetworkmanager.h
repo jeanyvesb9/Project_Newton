@@ -24,9 +24,11 @@ using NeuralNetworkManagerPointer = QSharedPointer<NeuralNetworkManager>;
 class NeuralNetworkManager : public QObject
 {
     Q_OBJECT
+
+    explicit NeuralNetworkManager(QObject *parent = 0);
 public:
-    NeuralNetworkManager(QObject *parent = 0);
-    NeuralNetworkManager(QString file, QObject *parent = 0);
+    explicit NeuralNetworkManager(QString file, QObject *parent = 0);
+    ~NeuralNetworkManager();
 
     bool saveAndClose();
     inline bool isValid() const { return flags & NNManagerFlags::valid; }
@@ -54,7 +56,6 @@ private:
     NNContainerPointer loadNNfromQuery(QSqlQuery *query) const;
     bool loadInMemory();
     bool saveNNToDB(NNContainerPointer ptr); //ADDS Id
-
 };
 
 }

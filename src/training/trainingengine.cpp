@@ -100,20 +100,19 @@ void TrainingEngine::startNewGame()
     emit statusUpdate(this->status, this->engine->getBoard()->getBoardData(), this->iteration, this->totalIterations, this->moves, this->maxMoves, this->getGames());
 }
 
-void TrainingEngine::madeMove(PlayerMovePointer move)
+void TrainingEngine::madeMove(PlayerMovePointer move, Game::BoardData board)
 {
     Q_UNUSED(move)
     moves++;
-    emit statusUpdate(this->status, this->engine->getBoard()->getBoardData(), this->iteration, this->totalIterations, this->moves, this->maxMoves, this->getGames());
+    emit statusUpdate(this->status, board, this->iteration, this->totalIterations, this->moves, this->maxMoves, this->getGames());
 }
 
-void TrainingEngine::gameWon(int winner)
+void TrainingEngine::gameWon(Player winner)
 {
-    //qDebug() <<winner;
     TrainingGamePointer g = TrainingGamePointer(new TrainingGame());
     g->nn1 = this->player1;
     g->nn2 = this->player2;
-    g->score = winner == 1 ? 1 : -1; //VALUE REPLACED IN END FN
+    g->score = winner == Player::Player1 ? 1 : -1; //VALUE REPLACED IN END FN
 
     this->trainingData->games.append(g);
     nextTrain();
@@ -121,7 +120,6 @@ void TrainingEngine::gameWon(int winner)
 
 void TrainingEngine::hasTied()
 {
-    //qDebug() <<"3";
     TrainingGamePointer g = TrainingGamePointer(new TrainingGame());
     g->nn1 = this->player1;
     g->nn2 = this->player2;
@@ -180,14 +178,14 @@ void TrainingEngine::hasFinishedIteration()
         nnScores[game->nn1->id] += (game->score == -1 ? -2 : game->score);
         nnScores[game->nn2->id] += (-game->score == -1 ? -2 : -game->score);
     }
-    QVector<QPair<int, int>> ord;
+    QVector<QPair<quint64, int>> ord;
     for(auto &ns : nnScores.keys())
     {
         ord.append(QPair<int, int>(ns, nnScores[ns]));
     }
 
     std::sort(ord.begin(), ord.end(), [](const QPair<int, int> &p1, const QPair<int, int> &p2) {
-        return p2.second < p1.second;
+        return p1.second > p2.second;
     });
 
     for(int i = 15; i < 30; i++)
@@ -215,7 +213,23 @@ void TrainingEngine::hasFinishedIteration()
         }
     }
 
-    trainingData->bestPerforming = ord.at(0).first < 15 ? originalNNs->at(ord.at(0).first) : trainingData->newNNs.at(ord.at(0).first % 15);
+    for(auto &n : *originalNNs)
+    {
+        if(n->id == ord.at(0).first)
+        {
+            trainingData->bestPerforming = n;
+        }
+    }
+    if(trainingData.isNull())
+    {
+        for(auto &n : trainingData->newNNs)
+        {
+            if(n->id == ord.at(0).first)
+            {
+                trainingData->bestPerforming = n;
+            }
+        }
+    }
     trainingData->trainingTime = timer.elapsed();
 
     emit beginDBSave();

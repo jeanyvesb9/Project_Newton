@@ -20,14 +20,16 @@ SOURCES += \
     src/ui/initialwindow.cpp \
     src/ui/boardwidget.cpp \
     src/ui/aspectratiowidget.cpp \
+    src/game/gamefile.cpp \
+    src/ui/topologyselector.cpp \
+    src/ui/spinboxdelegate.cpp \
+    src/ui/newgameconfig.cpp \
     src/ui/playwindow.cpp \
-    src/game/gamefile.cpp
+    src/ui/playinfotable.cpp \
+    src/ui/playmenu.cpp
 
 RESOURCES += \
     resources.qrc
-
-# Additional import path used to resolve QML modules in Qt Creator's code model
-QML_IMPORT_PATH =
 
 # Default rules for deployment.
 include(deployment.pri)
@@ -51,10 +53,35 @@ HEADERS += \
     src/ui/initialwindow.h \
     src/ui/boardwidget.h \
     src/ui/aspectratiowidget.h \
+    src/game/gamefile.h \
+    src/ui/topologyselector.h \
+    src/ui/spinboxdelegate.h \
+    src/ui/newgameconfig.h \
+    src/ui/macwindow.h \
     src/ui/playwindow.h \
-    src/game/gamefile.h
+    src/ui/playinfotable.h \
+    src/ui/playmenu.h
 
 FORMS += \
     src/ui/nntraining.ui \
     src/ui/initialwindow.ui \
+    src/ui/topologyselector.ui \
+    src/ui/newgameconfig.ui \
     src/ui/playwindow.ui
+
+
+macx: {
+    DEFINES += MACX
+
+    LIBS += -framework Foundation -framework Cocoa
+    INCLUDEPATH += /System/Library/Frameworks/Foundation.framework/Versions/C/Headers \
+                   /System/Library/Frameworks/AppKit.framework/Headers \
+                   /System/Library/Frameworks/Cocoa.framework/Headers
+
+    OBJECTIVE_SOURCES += \
+        src/ui/macwindow.mm
+
+}
+
+DISTFILES += \
+    assets/text/help.txt

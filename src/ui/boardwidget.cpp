@@ -180,7 +180,7 @@ void BoardWidget::displayAvailableMoves(Game::BoardPointer board, QVector<Game::
 
 void BoardWidget::cellClicked(int id)
 {
-    if(boardPtr.isNull())
+    if(!boardPtr)
     {
         return;
     }

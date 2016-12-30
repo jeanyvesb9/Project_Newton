@@ -5,6 +5,7 @@
 #include <QSharedPointer>
 #include <QMessageBox>
 #include <QTextEdit>
+#include <QCloseEvent>
 
 #include "src/arduino/arduinoserial.h"
 #include "src/engine/gameengine.h"
@@ -17,6 +18,12 @@
 #include "src/ui/boardwidget.h"
 #include "src/ui/aspectratiowidget.h"
 #include "src/ui/playwindow.h"
+#include "src/ui/topologyselector.h"
+#include "src/ui/newgameconfig.h"
+
+#ifdef MACX
+#include "src/ui/macwindow.h"
+#endif
 
 namespace Ui {
 class InitialWindow;
@@ -30,17 +37,17 @@ public:
     explicit InitialWindow(QWidget *parent = 0);
     ~InitialWindow();
 
+public slots:
+    void updateBoardDisplayAndButton();
+
 private slots:
     void on_connectBoard_clicked();
-
     void on_connectCamera_clicked();
-
     void on_openNN_clicked();
-
     void on_createNN_clicked();
-
     void on_trainNN_clicked();
-
+    void on_openGame_clicked();
+    void on_newGame_clicked();
     void on_playGame_clicked();
 
 private:
@@ -59,7 +66,10 @@ private:
     AspectRatioWidget *brd_rw;
 
     Game::GameFilePointer gameFile;
-    PlayWindow *pw;
+
+#ifdef MACX
+    CocoaInitializer cocoaInit;
+#endif
 };
 
 #endif // INITIALWINDOW_H

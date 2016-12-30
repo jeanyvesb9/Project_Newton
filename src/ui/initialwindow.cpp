@@ -24,6 +24,7 @@ InitialWindow::InitialWindow(QWidget *parent) :
 
     ui->trainNN->setEnabled(0);
     ui->gameBox->setEnabled(false);
+    ui->playGame->setEnabled(false);
 }
 
 InitialWindow::~InitialWindow()
@@ -61,13 +62,13 @@ void InitialWindow::on_connectCamera_clicked()
 
 void InitialWindow::on_openNN_clicked()
 {
-    if(!nnm.isNull() && nnm->isValid())
-    {
-        nnm->saveAndClose();
-    }
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), QDir::homePath(), "Neural Network Family (*.nnf)");
     if(!fileName.isEmpty())
     {
+        if(!nnm.isNull() && nnm->isValid())
+        {
+            nnm->saveAndClose();
+        }
         nnm = NN::NeuralNetworkManagerPointer(new NN::NeuralNetworkManager(fileName));
         if(!nnm->isValid())
         {
@@ -87,14 +88,26 @@ void InitialWindow::on_openNN_clicked()
 
 void InitialWindow::on_createNN_clicked()
 {
-    if(!nnm.isNull() && nnm->isValid())
-    {
-        nnm->saveAndClose();
-    }
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"), QDir::homePath(), "Neural Network Family (*.nnf)");
     if(!fileName.isEmpty())
     {
-        NN::InternalTopology topology = {40, 10}; //TODO FIX WITH DIALOG
+        if(!nnm.isNull() && nnm->isValid())
+        {
+            nnm->saveAndClose();
+        }
+        if(QFile::exists(fileName) && !QFile::resize(fileName, 0))
+        {
+            QMessageBox msgBox;
+            msgBox.setText(tr("Error: Could not create file."));
+            msgBox.exec();
+            ui->nnConectionStatusLbl->setText(QString("<html><head/><body><p><span style=\" color:#ff0000;\">") + tr("Not Loaded") + QString("</span></p></body></html>"));
+            ui->gameBox->setEnabled(false);
+            ui->trainNN->setEnabled(false);
+            return;
+        }
+        TopologySelector *ts = new TopologySelector(this);
+        ts->exec();
+        NN::InternalTopology topology = ts->getTopology();
         nnm = NN::NeuralNetworkManager::createNewNNFamily(fileName, topology);
         if(!nnm->isValid())
         {
@@ -118,8 +131,85 @@ void InitialWindow::on_trainNN_clicked()
      nnt->show();
 }
 
+void InitialWindow::on_openGame_clicked()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), QDir::homePath(), "Checkers Game File (*.cg)");
+    if(!fileName.isEmpty())
+    {
+        if(!gameFile.isNull() && gameFile->isValid())
+        {
+            gameFile->saveAndClose();
+        }
+        gameFile = Game::GameFilePointer(new Game::GameFile(fileName));
+        if(!gameFile->isValid())
+        {
+            QMessageBox msgBox;
+            msgBox.setText(tr("Error: Could not open file."));
+            msgBox.exec();
+            ui->gameAddressLbl->setText(tr("Not Loaded"));
+            ui->playGame->setEnabled(false);
+            brdWidget->disableBoard();
+            return;
+        }
+        ui->gameAddressLbl->setText(fileName);
+        if(gameFile->hasFinished())
+            ui->playGame->setEnabled(false);
+        else
+            ui->playGame->setEnabled(true);
+        brdWidget->setBoard(gameFile->getBoardData());
+    }
+}
+
+void InitialWindow::on_newGame_clicked()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"), QDir::homePath(), "Checkers Game File (*.cg)");
+    if(!fileName.isEmpty())
+    {
+        if(!gameFile.isNull() && gameFile->isValid())
+        {
+            gameFile->saveAndClose();
+        }
+        if(QFile::exists(fileName) && !QFile::resize(fileName, 0))
+        {
+            QMessageBox msgBox;
+            msgBox.setText(tr("Error: Could not create file."));
+            msgBox.exec();
+            ui->gameAddressLbl->setText(tr("Not Loaded"));
+            ui->playGame->setEnabled(false);
+            brdWidget->disableBoard();
+            return;
+        }
+        NewGameConfig *ngc = new NewGameConfig(this);
+        ngc->exec();
+        gameFile = Game::GameFile::createNewGame(fileName, ngc->getName(), ngc->getDifficulty());
+        if(!gameFile->isValid())
+        {
+            QMessageBox msgBox;
+            msgBox.setText(tr("Error: Could not create file."));
+            msgBox.exec();
+            ui->gameAddressLbl->setText(tr("Not Loaded"));
+            ui->playGame->setEnabled(false);
+            brdWidget->disableBoard();
+            return;
+        }
+        ui->gameAddressLbl->setText(fileName);
+        ui->playGame->setEnabled(true);
+        brdWidget->setBoard(gameFile->getBoardData());
+    }
+}
+
 void InitialWindow::on_playGame_clicked()
 {
-    gameFile = Game::GameFile::createNewGame("");
-    pw = new PlayWindow(gameFile, nnm, this);
+    PlayWindow *pw = new PlayWindow(gameFile, nnm, this);
+    pw->show();
+    this->hide();
+    connect(pw, &PlayWindow::closingSignal, this, &InitialWindow::updateBoardDisplayAndButton);
+}
+
+void InitialWindow::updateBoardDisplayAndButton()
+{
+    brdWidget->setBoard(gameFile->getBoardData());
+    if(gameFile->hasFinished())
+            ui->playGame->setEnabled(false);
+    show();
 }

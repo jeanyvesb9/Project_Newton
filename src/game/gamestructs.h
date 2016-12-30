@@ -39,6 +39,7 @@ struct Move {
 
 }
 
-Q_DECLARE_METATYPE(Game::MovePointer)
+Q_DECLARE_METATYPE(Game::MovePointer);
+Q_DECLARE_METATYPE(Game::BoardData);
 
 #endif // MOVE_H

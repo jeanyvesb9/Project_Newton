@@ -39,8 +39,8 @@ public slots:
     void cancelTraining();
 
 private slots:
-    void madeMove(PlayerMovePointer move);
-    void gameWon(int winner);
+    void madeMove(PlayerMovePointer move, Game::BoardData board);
+    void gameWon(Player winner);
     void hasTied();
 
 private:

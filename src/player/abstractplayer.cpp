@@ -1,20 +1,31 @@
 #include "abstractplayer.h"
 
 AbstractPlayer::AbstractPlayer(Game::Side side, QObject *parent) : QObject(parent),
-    hasToStop{false}, side{side}, running{false}, hasToBegin{false}, backgroundTaskStatus{true}
+    hasToStop{false}, side{side}, running{false}, hasToBegin{false}, backgroundTaskStatus{true}, timerId{0}
 {
 
 }
 
-bool AbstractPlayer::startTurn(Game::BoardData boardData)
+AbstractPlayer::~AbstractPlayer()
+{
+    if(timerId)
+    {
+        killTimer(timerId);
+        timerId = 0;
+    }
+}
+
+void AbstractPlayer::startTurn(Game::BoardData boardData)
 {
     mutex.lock();
-    board = Game::BoardPointer(new Game::Board(boardData));
-    hasToBegin = true;
-    time.restart();
-    bool r = running;
+    if(!running)
+    {
+        board = Game::BoardPointer(new Game::Board(boardData));
+        hasToBegin = true;
+        time = 0;
+        timerId = startTimer(1000);
+    }
     mutex.unlock();
-    return !r;
 }
 
 void AbstractPlayer::launchBackgroundTask()
@@ -26,6 +37,12 @@ void AbstractPlayer::launchBackgroundTask()
         if(hasToStop)
         {
             mutex.unlock();
+            if(timerId)
+            {
+                killTimer(timerId);
+                timerId = 0;
+            }
+            moveToThread(qApp->thread());
             emit hasStopped();
             return;
         }
@@ -76,5 +93,17 @@ void AbstractPlayer::backgroundTask()
 
 void AbstractPlayer::finishTurn(Game::MovePointer move)
 {
-    emit finishedTurn(move, time.elapsed());
+    if(timerId)
+    {
+        killTimer(timerId);
+        timerId = 0;
+    }
+    emit finishedTurn(move, time);
+}
+
+void AbstractPlayer::timerEvent(QTimerEvent *event)
+{
+    Q_UNUSED(event);
+    time += 1000;
+    emit oneSecondtimerTick(time);
 }

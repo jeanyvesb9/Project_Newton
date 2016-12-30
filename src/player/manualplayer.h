@@ -10,11 +10,12 @@
 
 class ManualPlayer : public AbstractPlayer
 {
+    Q_OBJECT
 public:
     explicit ManualPlayer(Game::Side side, QObject *parent = 0);
 
 public slots:
-    void validateTurn(QVector<BoardPiece> rawBoardData);
+    Q_INVOKABLE void validateTurn(QVector<BoardPiece> rawBoardData);
 
 signals:
     void wrongMove();
@@ -25,7 +26,11 @@ protected:
 
 private:
     QVector<Game::MovePointer> possibleMoves;
+    Game::MovePointer move;
+    bool hasFinished;
 };
 using ManualPlayerPointer = QSharedPointer<ManualPlayer>;
+
+Q_DECLARE_METATYPE(QVector<BoardPiece>);
 
 #endif // MANUALPLAYER_H

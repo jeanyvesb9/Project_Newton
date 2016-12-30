@@ -14,6 +14,7 @@ class AbstractPlayer : public QObject
     Q_OBJECT
 public:
     explicit AbstractPlayer(Game::Side side, QObject *parent = 0);
+    ~AbstractPlayer();
 
     inline Game::Side getSide() const { return side; }
     bool isRunning();
@@ -21,9 +22,10 @@ public:
 signals:
     void finishedTurn(Game::MovePointer move, int time);
     void hasStopped();
+    void oneSecondtimerTick(int time);
 
 public slots:
-    bool startTurn(Game::BoardData boardData);
+    Q_INVOKABLE void startTurn(Game::BoardData boardData);
 
     void launchBackgroundTask();
     void pauseBackgroundTask();
@@ -43,12 +45,15 @@ protected:
 
     void finishTurn(Game::MovePointer move);
 
+    void timerEvent(QTimerEvent *event) override;
+
 private:
     bool running;
     bool hasToBegin;
     bool backgroundTaskStatus;
 
-    QTime time;
+    int timerId;
+    quint64 time;
 };
 using AbstractPlayerPointer = QSharedPointer<AbstractPlayer>;
 

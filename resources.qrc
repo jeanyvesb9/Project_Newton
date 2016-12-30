@@ -3,5 +3,6 @@
         <file>assets/fonts/AdobeClean-Light.otf</file>
         <file>assets/fonts/segoeuil.ttf</file>
         <file>assets/images/crown.svg</file>
+        <file>assets/text/help.txt</file>
     </qresource>
 </RCC>

@@ -1,9 +1,5 @@
 #include <QApplication>
 
-#include <QDebug>
-#include <QDateTime>
-#include <iostream>
-
 #include "src/neuralNetwork/neuralnetworkmanager.h"
 #include "src/training/trainingengine.h"
 #include "src/game/board.h"
@@ -14,12 +10,15 @@
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication app(argc, argv);
+    app.setAttribute(Qt::AA_EnableHighDpiScaling);
+
     qRegisterMetaType<Game::MovePointer>();
     qRegisterMetaType<Game::BoardPointer>();
+    qRegisterMetaType<Game::BoardData>();
     qRegisterMetaType<NN::TrainingDataPointer>();
     qRegisterMetaType<NN::Status>();
+    qRegisterMetaType<QVector<BoardPiece>>();
 
     InitialWindow w;
     w.show();

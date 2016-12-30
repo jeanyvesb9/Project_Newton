@@ -26,8 +26,18 @@ NeuralNetworkManager::NeuralNetworkManager(QString file, QObject *parent)
     }
 }
 
+NeuralNetworkManager::~NeuralNetworkManager()
+{
+    if(db.isOpen())
+    {
+        saveAndClose();
+    }
+}
+
 bool NeuralNetworkManager::saveAndClose()
 {
+    db.close();
+    db = QSqlDatabase();
     QSqlDatabase::removeDatabase("nnDb");
     flags = 0;
     return true;
@@ -150,7 +160,7 @@ NeuralNetworkManagerPointer NeuralNetworkManager::createNewNNFamily(QString file
 {
     NeuralNetworkManagerPointer ptr = NeuralNetworkManagerPointer(new NeuralNetworkManager());
     QSqlDatabase &db = ptr->db;
-    db = QSqlDatabase::addDatabase("QSQLITE");
+    db = QSqlDatabase::addDatabase("QSQLITE", "nnDb");
     db.setDatabaseName(file);
     if(!db.open())
     {
