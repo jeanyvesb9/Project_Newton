@@ -19,7 +19,7 @@ void ManualPlayer::validateTurn(QVector<BoardPiece> rawBoardData)
     }
     if(move.isNull())
     {
-        emit wrongMove();
+        wasWrongMove = true;
     }
     else
     {
@@ -31,22 +31,32 @@ void ManualPlayer::validateTurn(QVector<BoardPiece> rawBoardData)
 void ManualPlayer::executeTurn()
 {
     hasFinished = false;
+    wasWrongMove = false;
     possibleMoves = board->getAllMoves(side);
     while(true)
     {
         QApplication::processEvents();
         mutex.lock();
-        if(hasFinished)
-        {
-            finishTurn(move);
-            mutex.unlock();
-            return;
-        }
         if(hasToStop)
         {
             mutex.unlock();
             return;
         }
+        updatePaused();
+        if(!paused)
+        {
+            if(hasFinished)
+            {
+                finishTurn(move);
+                mutex.unlock();
+                return;
+            }
+            else if(wasWrongMove)
+            {
+                emit wrongMove();
+            }
+        }
+
         mutex.unlock();
     }
 }

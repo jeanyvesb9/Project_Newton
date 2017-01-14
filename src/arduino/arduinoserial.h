@@ -2,12 +2,13 @@
 #define ARDUINOSERIAL_H
 
 #include <QObject>
+#include <QSharedPointer>
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <QList>
 #include <QtGlobal>
 #include <QtEndian>
-#include <QtDebug>
+#include <QDebug>
 
 #include "src/game/gamestructs.h"
 #include "src/game/board.h"
@@ -25,6 +26,7 @@ public:
 
 public slots:
     void sendMove(Game::BoardPointer board, Game::MovePointer move);
+    void sendCellGroup(QVector<Game::Cell> cells);
     void setBlack();
 
 private slots:
@@ -32,10 +34,14 @@ private slots:
 
 signals:
     void gotBtn1Press();
+    void gotBtn1LongPress();
     void gotBtn2Press();
+    void gotBtn2LongPress();
 
 private:
     QSerialPort *serial;
 };
 
-#endif // ARDUINOSERIAL_H
+using ArduinoSerialPointer = QSharedPointer<ArduinoSerial>;
+
+ #endif // ARDUINOSERIAL_H

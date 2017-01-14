@@ -33,6 +33,8 @@ public:
 
     ~GameEngine();
 
+    bool isPaused();
+
     Game::BoardPointer getBoard() const;
     Game::BoardPointer* getBoardPtr();
 
@@ -56,6 +58,8 @@ signals:
     void oneSecondTimerTick(int time);
 
 public slots:
+    void pauseGame();
+    void resumeGame();
     void stopGame();
 
 protected:
@@ -66,7 +70,7 @@ private slots:
     void player2_hasFinished(Game::MovePointer move, int time);
 
 private:
-    bool isRunning;
+    bool paused;
 
     Game::BoardPointer board;
     int tieValue;

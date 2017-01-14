@@ -6,6 +6,7 @@ Game::GameFile::GameFile()
 }
 
 Game::GameFile::GameFile(QString file)
+    : fileName{file}
 {
     db = QSqlDatabase::addDatabase("QSQLITE", "gameDb");
     db.setDatabaseName(file);
@@ -23,6 +24,11 @@ Game::GameFile::~GameFile()
     {
         saveAndClose();
     }
+}
+
+QString Game::GameFile::getFileName() const
+{
+    return fileName;
 }
 
 bool Game::GameFile::saveAndClose()
@@ -141,10 +147,10 @@ void Game::GameFile::addMove(PlayerMovePointer move, Game::BoardData newBoard)
         query.clear();
     }
 
-    this->gameTime += move->time;
+    this->activePlayer = move->player == Player::Player1 ? Player::Player2 : Player::Player1;
     this->board = newBoard;
     query.prepare(QStringLiteral("UPDATE generalData SET ActivePlayer = :activePlayer, Board = :board"));
-    query.bindValue(QStringLiteral(":activePlayer"), static_cast<int>(move->player == Player::Player1 ? Player::Player2 : Player::Player1));
+    query.bindValue(QStringLiteral(":activePlayer"), static_cast<int>(this->activePlayer));
     query.bindValue(QStringLiteral(":board"), boardDataToString(newBoard));
     if(!query.exec())
     {
@@ -240,6 +246,7 @@ Player Game::GameFile::getActivePlayer() const
 Game::GameFilePointer Game::GameFile::createNewGame(QString file, QString name, quint8 difficulty)
 {
     GameFilePointer ptr(new GameFile());
+    ptr->fileName = file;
     ptr->valid = false;
     QSqlDatabase &db = ptr->db;
     db = QSqlDatabase::addDatabase("QSQLITE", "gameDb");

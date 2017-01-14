@@ -38,7 +38,7 @@ void NeuralNetworkPlayer::executeTurn()
             bestMove = move;
         }
     }
-    finishTurn(bestMove);
+    pauseLoop([this, &bestMove](){ finishTurn(bestMove); });
 }
 
 long double NeuralNetworkPlayer::minimax(Game::BoardPointer board, long double alpha, long double beta, int ply, bool maximisingPlayer)
@@ -67,6 +67,7 @@ long double NeuralNetworkPlayer::minimax(Game::BoardPointer board, long double a
             return 0;
         }
         mutex.unlock();
+        pauseLoop();
 
         Game::BoardPointer nBoard = board->executeMove(move);
         long double currentEval = -minimax(nBoard, -beta, -alpha, ply - 1, !maximisingPlayer);
@@ -84,7 +85,24 @@ long double NeuralNetworkPlayer::minimax(Game::BoardPointer board, long double a
     return alpha;
 }
 
-void NeuralNetworkPlayer::backgroundTask()
+void NeuralNetworkPlayer::pauseLoop(std::function<void ()> lambda)
 {
-
+    while(1)
+    {
+        QApplication::processEvents();
+        mutex.lock();
+        if(hasToStop)
+        {
+            mutex.unlock();
+            return;
+        }
+        updatePaused();
+        if(!paused)
+        {
+            mutex.unlock();
+            lambda();
+            return;
+        }
+        mutex.unlock();
+    }
 }

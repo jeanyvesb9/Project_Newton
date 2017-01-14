@@ -5,6 +5,7 @@ PlayMenu::PlayMenu(bool cameraConnected, bool boardConnected, QFont adobeCleanLi
     state{State::NormalMenuState}, index{0}, cameraConnected{cameraConnected}, boardConnected{boardConnected},
     adobeCleanLight{adobeCleanLight}, segoeUILight{segoeUILight}
 {
+    setMouseTracking(true);
     setFixedSize(400, cameraConnected ? 126 : 106);
     maxIndex = cameraConnected ? 4 : 3;
 }
@@ -44,7 +45,7 @@ void PlayMenu::paintEvent(QPaintEvent *event)
     else if(state == State::HelpState)
     {
         int h = drawTitle(tr("Help"), painter);
-        QFile f(QStringLiteral(":/assets/text/help.txt")); //TODO: SELECT BASED ON SYSTEM LANGUAJE
+        QFile f(QStringLiteral(":/assets/text/help.txt")); //TODO: SELECT BASED ON SYSTEM LANGUAGE
         f.open(QFile::ReadOnly | QFile::Text);
         QTextStream ts(&f);
         h += drawText(ts.readAll(), h, painter);
@@ -55,6 +56,11 @@ void PlayMenu::paintEvent(QPaintEvent *event)
         int h = drawTitle(tr("Quit Game"), painter);
         h += drawText(tr("Progress is saved. Do you want to continue?"), h, painter);
         drawOptions({tr("Yes"), tr("No")}, index, (cameraConnected ? h + 40 : h + 22), painter);
+    }
+    else if(state == State::NewGameLoadState)
+    {
+        int h = drawTitle(tr("New Game"), painter) - 8;
+        drawText(tr("Loading..."), h, painter, 13, Qt::AlignCenter, height() - h);
     }
 }
 
@@ -75,6 +81,7 @@ int PlayMenu::drawOptions(QStringList options, int index, int startingHeight, QP
 {
     int h = 20;
     int totalHeight = 0;
+    individualOptionsBoundRect.clear();
     for(int i = 0; i < options.size(); i++)
     {
         auto &option = options.at(i);
@@ -84,7 +91,9 @@ int PlayMenu::drawOptions(QStringList options, int index, int startingHeight, QP
             painter.setBrush(QColor(0x33, 0x33, 0x33, 0xFF));
         else
             painter.setBrush(QColor(0x44, 0x44, 0x44, 0xFF));
-        painter.drawRect(QRectF(4, startingHeight + totalHeight, width() - 8, h));
+        QRectF r = QRectF(4, startingHeight + totalHeight, width() - 8, h);
+        individualOptionsBoundRect << r;
+        painter.drawRect(r);
 
         painter.setBrush(Qt::NoBrush);
         painter.setPen(QPen(QColor(0xFF, 0xFF, 0xFF, 0xFF), 1));
@@ -93,16 +102,17 @@ int PlayMenu::drawOptions(QStringList options, int index, int startingHeight, QP
         painter.drawText(QRectF(8, startingHeight + totalHeight + 2, width() - 16, h - 1), Qt::AlignVCenter, option);
         totalHeight += 20;
     }
+    optionsBoundRect = QRectF(4, startingHeight, width() - 8, totalHeight);
     return totalHeight;
 }
 
-int PlayMenu::drawText(QString text, int startingHeight, QPainter &painter, int size)
+int PlayMenu::drawText(QString text, int startingHeight, QPainter &painter, int size, int flags, int fixedHeight)
 {
     painter.setBrush(Qt::NoBrush);
     painter.setPen(QPen(QColor(0xEE, 0xEE, 0xEE, 0xFF), 1));
     adobeCleanLight.setPixelSize(size);
     QRectF textBoundRect;
-    painter.drawText(QRectF(8, startingHeight, width() - 16, 10), Qt::TextWordWrap | Qt::TextDontClip, text, &textBoundRect);
+    painter.drawText(QRectF(8, startingHeight, width() - 16, fixedHeight), Qt::TextWordWrap | Qt::TextDontClip | flags, text, &textBoundRect);
     return textBoundRect.height();
 }
 
@@ -156,7 +166,8 @@ void PlayMenu::okPressed()
     {
         if(index == 0)
         {
-
+            state = State::NewGameLoadState;
+            emit newGame();
         }
         else
         {
@@ -175,7 +186,9 @@ void PlayMenu::okPressed()
     {
         if(index == 0)
         {
-
+            hide();
+            emit quitGame();
+            deleteLater();
         }
         else
         {
@@ -184,6 +197,7 @@ void PlayMenu::okPressed()
     }
 
     repaint();
+    updateIndexFromCursor(this->mapFromGlobal(QCursor::pos()));
 }
 
 void PlayMenu::backToNormalMenu()
@@ -192,6 +206,23 @@ void PlayMenu::backToNormalMenu()
     setFixedSize(400, cameraConnected ? 128 : 108);
     index = normalMenuIndex;
     maxIndex = cameraConnected ? 4 : 3;
+}
+
+void PlayMenu::updateIndexFromCursor(QPointF p)
+{
+    if(optionsBoundRect.contains(p))
+    {
+        for(int i = 0; i < individualOptionsBoundRect.size(); i++)
+        {
+            auto &r = individualOptionsBoundRect.at(i);
+            if(r.contains(p))
+            {
+                index = i;
+                repaint();
+                return;
+            }
+        }
+    }
 }
 
 void PlayMenu::keyPressEvent(QKeyEvent *event)
@@ -209,6 +240,7 @@ void PlayMenu::keyPressEvent(QKeyEvent *event)
         {
             backToNormalMenu();
             repaint();
+            updateIndexFromCursor(this->mapFromGlobal(QCursor::pos()));
         }
         break;
     case Qt::Key_Enter:
@@ -232,7 +264,15 @@ void PlayMenu::keyPressEvent(QKeyEvent *event)
 
 void PlayMenu::mousePressEvent(QMouseEvent *event)
 {
+    if(optionsBoundRect.contains(event->localPos()))
+    {
+        okPressed();
+    }
+}
 
+void PlayMenu::mouseMoveEvent(QMouseEvent *event)
+{
+    updateIndexFromCursor(event->localPos());
 }
 
 void PlayMenu::resizeEvent(QResizeEvent *event)

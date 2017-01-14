@@ -1,9 +1,7 @@
-#ifdef MACX
-
 #include "src/ui/macwindow.h"
 
-#include <Cocoa.h>
-#include <AppKit.h>
+#include <Cocoa/Cocoa.h>
+#include <Appkit/AppKit.h>
 
 class CocoaInitializer::Private
 {
@@ -24,12 +22,7 @@ CocoaInitializer::~CocoaInitializer()
     delete p;
 }
 
-//--------------------------------------------------------------------------------------------------------------------
-
-void MacWindow::initObjC_GC()
-{
-
-}
+//---------------------------------------------------------------------------------------------------------------------
 
 void MacWindow::setWindowStyle(long win_id)
 {
@@ -40,5 +33,3 @@ void MacWindow::setWindowStyle(long win_id)
     [nativeWindow setTitlebarAppearsTransparent: YES];
     [nativeWindow setMovableByWindowBackground: YES];
 }
-
-#endif

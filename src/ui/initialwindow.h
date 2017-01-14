@@ -20,8 +20,10 @@
 #include "src/ui/playwindow.h"
 #include "src/ui/topologyselector.h"
 #include "src/ui/newgameconfig.h"
+#include "src/ui/cameraselector.h"
+#include "src/ui/cameracalibrationdisplay.h"
 
-#ifdef MACX
+#ifdef MACOS
 #include "src/ui/macwindow.h"
 #endif
 
@@ -38,11 +40,12 @@ public:
     ~InitialWindow();
 
 public slots:
-    void updateBoardDisplayAndButton();
+    void handlePlayWindowClosure();
+    void newGameFromPlayWindow();
 
 private slots:
     void on_connectBoard_clicked();
-    void on_connectCamera_clicked();
+    void on_selectCamera_clicked();
     void on_openNN_clicked();
     void on_createNN_clicked();
     void on_trainNN_clicked();
@@ -50,16 +53,21 @@ private slots:
     void on_newGame_clicked();
     void on_playGame_clicked();
 
+    void on_calibrateCamera_clicked();
+
+    void cameraLocalErrorHandler(QString error);
+    void cameraRemoteErrorHandler();
+
 private:
     Ui::InitialWindow *ui;
     QList<QSerialPortInfo> portList;
-    QSharedPointer<ArduinoSerial> serial;
+    ArduinoSerialPointer arduinoSerial;
+    CameraAnalyzerPointer camera;
+    QMetaObject::Connection cameraErrorHandlingConnection;
+    QPointer<CameraCalibrationDisplay> ccdw;
 
     NN::NeuralNetworkManagerPointer nnm;
     NNTraining *nnt;
-
-    bool boardConnected;
-    bool cameraConnected;
 
     BoardWidget *brdWidget;
     Game::BoardPointer brd;
@@ -67,7 +75,9 @@ private:
 
     Game::GameFilePointer gameFile;
 
-#ifdef MACX
+    PlayWindow *pw;
+
+#ifdef MACOS
     CocoaInitializer cocoaInit;
 #endif
 };

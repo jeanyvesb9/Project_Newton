@@ -8,7 +8,6 @@ TopologySelector::TopologySelector(QWidget *parent) :
     ui->setupUi(this);
     this->setWindowTitle(tr("Topology"));
     this->setModal(true);
-    //this->setWindowFlags(Qt::FramelessWindowHint);
 
     on_defaultLayers_clicked();
     ui->layers->setItemDelegateForColumn(1, &delegate);

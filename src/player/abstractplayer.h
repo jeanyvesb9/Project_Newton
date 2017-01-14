@@ -17,7 +17,8 @@ public:
     ~AbstractPlayer();
 
     inline Game::Side getSide() const { return side; }
-    bool isRunning();
+    bool isExecuting();
+    bool isPaused();
 
 signals:
     void finishedTurn(Game::MovePointer move, int time);
@@ -28,14 +29,15 @@ public slots:
     Q_INVOKABLE void startTurn(Game::BoardData boardData);
 
     void launchBackgroundTask();
-    void pauseBackgroundTask();
-    void resumeBackgroundTask();
+    void pause();
+    void resume();
 
-    void stop();
+    Q_INVOKABLE void stop();
 
 protected:
     QMutex mutex;
     bool hasToStop;
+    bool paused;
 
     Game::BoardPointer board;
     Game::Side side;
@@ -43,14 +45,16 @@ protected:
     virtual void executeTurn() = 0;
     virtual void backgroundTask(); //HAS TO BE ATOMIC!!
 
+    void updatePaused();
     void finishTurn(Game::MovePointer move);
 
     void timerEvent(QTimerEvent *event) override;
 
 private:
-    bool running;
+    bool executing;
     bool hasToBegin;
-    bool backgroundTaskStatus;
+    bool hasToPause;
+    bool hasToResume;
 
     int timerId;
     quint64 time;

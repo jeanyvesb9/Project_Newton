@@ -1,7 +1,7 @@
 #include "abstractplayer.h"
 
 AbstractPlayer::AbstractPlayer(Game::Side side, QObject *parent) : QObject(parent),
-    hasToStop{false}, side{side}, running{false}, hasToBegin{false}, backgroundTaskStatus{true}, timerId{0}
+    hasToStop{false}, paused{false}, side{side}, executing{false}, hasToBegin{false}, hasToPause{false}, hasToResume{false}, timerId{0}
 {
 
 }
@@ -15,15 +15,23 @@ AbstractPlayer::~AbstractPlayer()
     }
 }
 
+bool AbstractPlayer::isExecuting()
+{
+    return executing;
+}
+
+bool AbstractPlayer::isPaused()
+{
+    return paused;
+}
+
 void AbstractPlayer::startTurn(Game::BoardData boardData)
 {
     mutex.lock();
-    if(!running)
+    if(!executing)
     {
         board = Game::BoardPointer(new Game::Board(boardData));
         hasToBegin = true;
-        time = 0;
-        timerId = startTimer(1000);
     }
     mutex.unlock();
 }
@@ -46,36 +54,49 @@ void AbstractPlayer::launchBackgroundTask()
             emit hasStopped();
             return;
         }
-        if(hasToBegin)
+        if(hasToPause)
         {
-            hasToBegin = false;
-            running = true;
-            mutex.unlock();
-            executeTurn();
-            mutex.lock();
-            running = false;
+            hasToPause = false;
+            paused = true;
         }
-        if(backgroundTaskStatus)
+        if(hasToResume)
         {
+            hasToResume = false;
+            paused = false;
+        }
+        if(!paused)
+        {
+            if(hasToBegin)
+            {
+                hasToBegin = false;
+                executing = true;
+                time = 0;
+                timerId = startTimer(1000);
+                mutex.unlock();
+                executeTurn();
+                mutex.lock();
+                executing = false;
+            }
             mutex.unlock();
             backgroundTask();
             mutex.lock();
         }
+
         mutex.unlock();
     }
 }
 
-void AbstractPlayer::pauseBackgroundTask()
+void AbstractPlayer::pause()
 {
     mutex.lock();
-    backgroundTaskStatus = false;
+    hasToPause = true;
     mutex.unlock();
 }
 
-void AbstractPlayer::resumeBackgroundTask()
+void AbstractPlayer::resume()
 {
     mutex.lock();
-    backgroundTaskStatus = true;
+    hasToResume = true;
     mutex.unlock();
 }
 
@@ -89,6 +110,27 @@ void AbstractPlayer::stop()
 void AbstractPlayer::backgroundTask()
 {
 
+}
+
+void AbstractPlayer::updatePaused()
+{
+    if(hasToPause)
+    {
+        if(timerId)
+        {
+            killTimer(timerId);
+            timerId = 0;
+        }
+        paused = true;
+    }
+    if(hasToResume)
+    {
+        if(!timerId)
+        {
+            timerId = startTimer(1000);
+        }
+        paused = false;
+    }
 }
 
 void AbstractPlayer::finishTurn(Game::MovePointer move)

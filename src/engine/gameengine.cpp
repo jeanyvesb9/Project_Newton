@@ -1,7 +1,7 @@
 #include "gameengine.h"
 
 GameEngine::GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2, int tie, QObject *parent) : QObject(parent),
-    board{Game::Board::defaultBoard()}, tieValue{tie}, turnNumber{1},
+    paused{false}, board{Game::Board::defaultBoard()}, tieValue{tie}, turnNumber{1},
     player1{p1}, player1_thread{new QThread()}, player2{p2}, player2_thread{new QThread()}, timerId{0}, playTime{0}
 {
     std::random_device rd;
@@ -39,7 +39,7 @@ GameEngine::GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2,
                        Game::BoardData board, int turnNumber, Player currentPlayer, quint64 playtime,
                        int tie,
                        QObject *parent) : QObject(parent),
-    board{Game::BoardPointer(new Game::Board(board))}, tieValue{tie}, turnNumber{turnNumber},
+    paused{false}, board{Game::BoardPointer(new Game::Board(board))}, tieValue{tie}, turnNumber{turnNumber},
     player1{p1}, player1_thread{new QThread()}, player2{p2}, player2_thread{new QThread()},
     currentPlayer{currentPlayer}, timerId{0}, playTime{playtime}
 {
@@ -76,6 +76,11 @@ GameEngine::~GameEngine()
         killTimer(timerId);
         timerId = 0;
     }
+}
+
+bool GameEngine::isPaused()
+{
+    return paused;
 }
 
 void GameEngine::player1_hasFinished(Game::MovePointer move, int time)
@@ -167,6 +172,35 @@ Player GameEngine::getWinningPlayer() const
     }
 }
 
+void GameEngine::pauseGame()
+{
+    if(!paused)
+    {
+        paused = true;
+        player1->pause();
+        player2->pause();
+        if(timerId)
+        {
+            killTimer(timerId);
+            timerId = 0;
+        }
+    }
+}
+
+void GameEngine::resumeGame()
+{
+    if(paused)
+    {
+        paused = false;
+        player1->resume();
+        player2->resume();
+        if(!timerId)
+        {
+            timerId = startTimer(1000);
+        }
+    }
+}
+
 void GameEngine::stopGame()
 {
     if(timerId)
@@ -174,8 +208,9 @@ void GameEngine::stopGame()
         killTimer(timerId);
         timerId = 0;
     }
-    player1->stop();
-    player2->stop();
+
+    QMetaObject::invokeMethod(player1.data(), "stop", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(player2.data(), "stop", Qt::QueuedConnection);
     currentPlayer = Player::None;
 }
 

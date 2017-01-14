@@ -3,7 +3,7 @@
 
 InitialWindow::InitialWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::InitialWindow), nnt{nullptr}, boardConnected{0}, cameraConnected{0}
+    ui(new Ui::InitialWindow), ccdw{nullptr}, nnt{nullptr}
 {
     ui->setupUi(this);
 
@@ -13,7 +13,6 @@ InitialWindow::InitialWindow(QWidget *parent) :
     portList = ArduinoSerial::getSerialPorts();
     for(auto &item : portList)
     {
-        ui->cameraList->addItem(item.portName());
         ui->boardList->addItem(item.portName());
     }
 
@@ -22,7 +21,8 @@ InitialWindow::InitialWindow(QWidget *parent) :
     brdWidget->setParent(brd_rw);
     ui->gameBox->layout()->addWidget(brd_rw);
 
-    ui->trainNN->setEnabled(0);
+    ui->trainNN->setEnabled(false);
+    ui->calibrateCamera->setEnabled(false);
     ui->gameBox->setEnabled(false);
     ui->playGame->setEnabled(false);
 }
@@ -41,7 +41,7 @@ void InitialWindow::on_connectBoard_clicked()
 {
     try
     {
-        serial = QSharedPointer<ArduinoSerial>(new ArduinoSerial(portList[ui->boardList->currentIndex()]));
+        arduinoSerial = ArduinoSerialPointer(new ArduinoSerial(portList[ui->boardList->currentIndex()]));
     } catch (...)
     {
         QMessageBox msgBox;
@@ -49,15 +49,88 @@ void InitialWindow::on_connectBoard_clicked()
         msgBox.exec();
         return;
     }
-    QMessageBox msgBox;
-    msgBox.setText(tr("Conectado"));
-    msgBox.exec();
-    boardConnected = 1;
+    ui->boardList->setEnabled(false);
+    ui->connectBoard->setEnabled(false);
+    ui->boardConnectionStatus->setText(tr("Connected"));
 }
 
-void InitialWindow::on_connectCamera_clicked()
+void InitialWindow::on_selectCamera_clicked()
 {
-    //TODO
+    if(ccdw)
+    {
+        ccdw->close();
+        ccdw->deleteLater();
+    }
+    CameraAnalyzer *prevCam = camera.data();
+    CameraSelector *cs = new CameraSelector(&camera, this);
+    cs->exec();
+    cs->deleteLater();
+    if(!camera.isNull())
+    {
+        if(camera.data() != prevCam)
+        {
+            ui->cameraConnectionStatus->setText(tr("Connected to \"") + camera->getCameraDeviceInfo().name + QStringLiteral("\""));
+            ui->calibrateCamera->setEnabled(true);
+            ccdw = new CameraCalibrationDisplay(camera, true, true, this);
+            ccdw->show();
+            QObject::connect(ccdw, &CameraCalibrationDisplay::closed, this, [this]() {
+                ccdw->deleteLater();
+                if(!camera->getErrorState())
+                {
+                    if(!pw)
+                    {
+                        camera->stopCapture();
+                        this->cameraErrorHandlingConnection = QObject::connect(camera.data(), &CameraAnalyzer::cameraError, this, &InitialWindow::cameraLocalErrorHandler);
+                    }
+                }
+            });
+        }
+        else
+        {
+            camera->stopCapture();
+        }
+    }
+    else
+    {
+        ui->cameraConnectionStatus->setText(QStringLiteral("<html><head/><body><p><span style=\" color:#0000ff;\">") + tr("Not Connected") + QStringLiteral("</span></p></body></html>"));
+        ui->calibrateCamera->setEnabled(false);
+    }
+}
+
+void InitialWindow::on_calibrateCamera_clicked()
+{
+    if(!camera.isNull() && !ccdw)
+    {
+        camera->startCapture();
+        ccdw = new CameraCalibrationDisplay(camera, false, true, this);
+        ccdw->show();
+        QObject::connect(ccdw, &CameraCalibrationDisplay::closed, this, [this]() {
+            ccdw->deleteLater();
+            if(!camera->getErrorState())
+            {
+                if(!pw)
+                {
+                    camera->stopCapture();
+                    this->cameraErrorHandlingConnection = QObject::connect(camera.data(), &CameraAnalyzer::cameraError, this, &InitialWindow::cameraLocalErrorHandler);
+                }
+            }
+        });
+    }
+}
+
+void InitialWindow::cameraLocalErrorHandler(QString error)
+{
+    QMessageBox msgBox;
+    msgBox.setText(error);
+    msgBox.exec();
+    cameraRemoteErrorHandler();
+}
+
+void InitialWindow::cameraRemoteErrorHandler()
+{
+    ui->cameraConnectionStatus->setText(QStringLiteral("<html><head/><body><p><span style=\" color:#0000ff;\">") + tr("Not Connected") + QStringLiteral("</span></p></body></html>"));
+    ui->calibrateCamera->setEnabled(false);
+    this->camera.reset();
 }
 
 void InitialWindow::on_openNN_clicked()
@@ -200,16 +273,137 @@ void InitialWindow::on_newGame_clicked()
 
 void InitialWindow::on_playGame_clicked()
 {
-    PlayWindow *pw = new PlayWindow(gameFile, nnm, this);
+    pw = new PlayWindow(gameFile, nnm, arduinoSerial, camera, this);
     pw->show();
     this->hide();
-    connect(pw, &PlayWindow::closingSignal, this, &InitialWindow::updateBoardDisplayAndButton);
+    if(ccdw)
+    {
+        ccdw->setErrorHandlingResponsibility(false);
+    }
+    QObject::disconnect(cameraErrorHandlingConnection);
+    if(!camera->getErrorState())
+    {
+        this->cameraErrorHandlingConnection = QObject::connect(camera.data(), &CameraAnalyzer::cameraError, this, &InitialWindow::cameraRemoteErrorHandler);
+    }
+    QObject::connect(pw, &PlayWindow::closingSignal, this, &InitialWindow::handlePlayWindowClosure);
+    QObject::connect(pw, &PlayWindow::newGame, this, &InitialWindow::newGameFromPlayWindow);
 }
 
-void InitialWindow::updateBoardDisplayAndButton()
+void InitialWindow::handlePlayWindowClosure()
 {
     brdWidget->setBoard(gameFile->getBoardData());
     if(gameFile->hasFinished())
             ui->playGame->setEnabled(false);
+    QObject::disconnect(cameraErrorHandlingConnection);
+    if(!camera->getErrorState())
+    {
+        if(ccdw)
+        {
+            ccdw->setErrorHandlingResponsibility(true);
+        }
+        else
+        {
+            this->cameraErrorHandlingConnection = QObject::connect(camera.data(), &CameraAnalyzer::cameraError, this, &InitialWindow::cameraLocalErrorHandler);
+            camera->stopCapture();
+        }
+    }
     show();
+    pw->deleteLater();
+}
+
+void InitialWindow::newGameFromPlayWindow()
+{
+    QObject::disconnect(cameraErrorHandlingConnection);
+    if(!camera->getErrorState())
+    {
+        if(ccdw)
+        {
+            ccdw->setErrorHandlingResponsibility(true);
+        }
+        else
+        {
+            this->cameraErrorHandlingConnection = QObject::connect(camera.data(), &CameraAnalyzer::cameraError, this, &InitialWindow::cameraLocalErrorHandler);
+        }
+    }
+
+    QFileInfo origFile(gameFile->getFileName());
+    QDir folder = origFile.dir();
+    QString origFileName = origFile.fileName().remove(QRegExp(QStringLiteral("_\\d+\\.cg$|\\.cg$")));
+    QStringList fileList = folder.entryList({"*.cg"});
+    int maxIndex = 0;
+    for(auto &fpn : fileList)
+    {
+        QString f = QFileInfo(fpn).fileName();
+        QString fTrunc = f;
+        if(f.contains(QRegExp(QStringLiteral("_\\d+\\.cg$"))) && fTrunc.remove(QRegExp(QStringLiteral("_\\d+\\.cg$"))) == origFileName)
+        {
+            int endIter = f.size() - 1;
+            while(f.at(endIter) != '_')
+            {
+                endIter--;
+            }
+            endIter++;
+            int indexNumber = f.mid(endIter, f.size() - endIter - 3).toInt();
+            if(indexNumber > maxIndex)
+            {
+                maxIndex = indexNumber;
+            }
+        }
+    }
+    QString suffix = QStringLiteral("_") + QString::number(maxIndex + 1) + QStringLiteral(".cg");
+    if(suffix.size() == 5)
+    {
+        suffix.insert(1, '0');
+    }
+    QString newFileName = folder.absolutePath() + QStringLiteral("/") + origFileName + suffix;
+    QString playerName = gameFile->getPlayerName();
+    quint8 difficulty = gameFile->getDifficulty();
+
+    QObject::disconnect(pw, &PlayWindow::closingSignal, this, &InitialWindow::handlePlayWindowClosure);
+    gameFile->saveAndClose();
+    gameFile.reset();
+    gameFile = Game::GameFile::createNewGame(newFileName, playerName, difficulty);
+    if(!gameFile->isValid())
+    {
+        show();
+        pw->close();
+        QMessageBox msgBox;
+        msgBox.setText(tr("Error: Could not create file."));
+        msgBox.exec();
+        ui->gameAddressLbl->setText(tr("Not Loaded"));
+        ui->playGame->setEnabled(false);
+        brdWidget->disableBoard();
+    }
+    else
+    {
+        ui->gameAddressLbl->setText(newFileName);
+        ui->playGame->setEnabled(true);
+        brdWidget->setBoard(gameFile->getBoardData());
+
+        PlayWindow *npw = new PlayWindow(gameFile, nnm, arduinoSerial, camera, this);
+        npw->show();
+        if(pw->isMaximized())
+        {
+            npw->showMaximized();
+        }
+        else if(pw->isFullScreen())
+        {
+            npw->showFullScreen();
+        }
+        else
+        {
+            npw->resize(pw->width(), pw->height());
+            npw->move(pw->x(), pw->y());
+        }
+
+        QObject::connect(npw, &PlayWindow::closingSignal, this, &InitialWindow::handlePlayWindowClosure);
+        QObject::connect(npw, &PlayWindow::newGame, this, &InitialWindow::newGameFromPlayWindow);
+        QObject::disconnect(cameraErrorHandlingConnection);
+        if(!camera->getErrorState())
+        {
+            this->cameraErrorHandlingConnection = QObject::connect(camera.data(), &CameraAnalyzer::cameraError, this, &InitialWindow::cameraRemoteErrorHandler);
+        }
+        pw->quitGame();
+        pw = npw;
+    }
 }

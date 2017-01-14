@@ -1,8 +1,6 @@
 #ifndef MACWINDOW_H
 #define MACWINDOW_H
 
-#ifdef MACX
-
 class CocoaInitializer
 {
 public:
@@ -16,10 +14,7 @@ private:
 class MacWindow
 {
 public:
-    static void initObjC_GC();
     static void setWindowStyle(long win_id);
 };
-
-#endif
 
 #endif // MACWINDOW_H

@@ -28,6 +28,8 @@ public:
     GameFile(QString file);
     ~GameFile();
 
+    QString getFileName() const;
+
     bool saveAndClose();
 
     void finishGame(Player winningPlayer);
@@ -53,6 +55,7 @@ public:
     static GameFilePointer createNewGame(QString file, QString name, quint8 difficulty);
 
 private:
+    QString fileName;
     QSqlDatabase db;
     bool valid;
 

@@ -6,7 +6,7 @@
 
 #include "src/player/abstractplayer.h"
 #include "src/game/board.h"
-#include "src/camera/cameraanalyser.h"
+#include "src/camera/cameraanalyzer.h"
 
 class ManualPlayer : public AbstractPlayer
 {
@@ -28,6 +28,7 @@ private:
     QVector<Game::MovePointer> possibleMoves;
     Game::MovePointer move;
     bool hasFinished;
+    bool wasWrongMove;
 };
 using ManualPlayerPointer = QSharedPointer<ManualPlayer>;
 

@@ -1,7 +1,10 @@
 #ifndef PLAYMENU_H
 #define PLAYMENU_H
 
+#include <QDebug>
 #include <QDialog>
+#include <QLabel>
+#include <QMovie>
 #include <QPainter>
 #include <QKeyEvent>
 #include <QMouseEvent>
@@ -15,11 +18,11 @@ public:
     explicit PlayMenu(bool cameraConnected, bool boardConnected, QFont adobeCleanLight, QFont segoeUILight, QWidget *parent = 0);
     ~PlayMenu();
 
-    enum State { NormalMenuState, NewGameState, CameraCalibrationState, HelpState, QuitState };
+    enum State { NormalMenuState, NewGameState, CameraCalibrationState, HelpState, QuitState, NewGameLoadState };
 signals:
-    void newGame(QString file, QString name, int difficulty);
+    void newGame();
     void resumeGame();
-    void exitGame();
+    void quitGame();
 
 public slots:
     void nextPressed();
@@ -29,6 +32,7 @@ protected:
     void paintEvent(QPaintEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
 
 private:
@@ -36,6 +40,8 @@ private:
     int index;
     int maxIndex;
     int normalMenuIndex;
+    QVector<QRectF> individualOptionsBoundRect;
+    QRectF optionsBoundRect;
 
     bool cameraConnected;
     bool boardConnected;
@@ -45,9 +51,10 @@ private:
 
     int drawTitle(QString title, QPainter &painter);
     int drawOptions(QStringList options, int index, int startingHeight, QPainter &painter);
-    int drawText(QString text, int startingHeight, QPainter &painter, int size = 13);
+    int drawText(QString text, int startingHeight, QPainter &painter, int size = 13, int flags = 0, int fixedHeight = 10);
 
     void backToNormalMenu();
+    void updateIndexFromCursor(QPointF p);
 };
 
 #endif // PLAYMENU_H

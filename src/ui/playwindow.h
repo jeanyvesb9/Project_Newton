@@ -11,6 +11,7 @@
 #include "src/player/neuralnetworkplayer.h"
 #include "src/arduino/arduinoserial.h"
 #include "src/game/gamefile.h"
+#include "src/camera/cameraanalyzer.h"
 #include "src/ui/macwindow.h"
 #include "src/ui/aspectratiowidget.h"
 #include "src/ui/boardwidget.h"
@@ -26,16 +27,27 @@ class PlayWindow : public QWidget
     Q_OBJECT
 
 public:
-    explicit PlayWindow(Game::GameFilePointer game, NN::NeuralNetworkManagerPointer nnm, QWidget *parent = 0);
+    explicit PlayWindow(Game::GameFilePointer game, NN::NeuralNetworkManagerPointer nnm, ArduinoSerialPointer arduinoSerial, CameraAnalyzerPointer cameraInterface, QWidget *parent = 0);
     ~PlayWindow();
+
+    enum GameMode { SoftwareOnly, WithBoard };
+
+public slots:
+    void quitGame();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
 
 private slots:
+    void setGameMode(GameMode mode);
+
     void on_menu_btn_clicked();
     void on_exit_btn_clicked();
+
+    void nextClicked();
+    void okClicked();
+    void okLongPressed();
 
     void resumeGame();
 
@@ -45,10 +57,12 @@ private slots:
     void totalTimerUpdate(int time);
 
 signals:
+    void newGame();
     void closingSignal();
 
 private:
     Ui::PlayWindow *ui;
+    GameMode gameMode;
     QFont adobeCleanLight;
     QFont segoeUILight;
 
@@ -63,6 +77,10 @@ private:
     ManualPlayerPointer manualPlayer;
 
     NN::NeuralNetworkPointer nn;
+
+    ArduinoSerialPointer arduinoSerial;
+    CameraAnalyzerPointer cameraInterface;
+    QMetaObject::Connection cameraErrorHandlingConnection;
 
     void setPlayerTurnTo(Player player);
 

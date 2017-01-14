@@ -1,15 +1,18 @@
 #include "playwindow.h"
 #include "ui_playwindow.h"
 
-PlayWindow::PlayWindow(Game::GameFilePointer game, NN::NeuralNetworkManagerPointer nnm, QWidget *parent) :
+PlayWindow::PlayWindow(Game::GameFilePointer game, NN::NeuralNetworkManagerPointer nnm, ArduinoSerialPointer arduinoSerial, CameraAnalyzerPointer cameraInterface, QWidget *parent) :
     QWidget(parent, Qt::Window),
     ui(new Ui::PlayWindow),
-    gameFile{game}, pm{nullptr}
+    gameFile{game}, arduinoSerial{arduinoSerial}, cameraInterface{cameraInterface}, pm{nullptr}
 {
     ui->setupUi(this);
 
-#ifdef MACX
+#ifdef MACOS
     MacWindow::setWindowStyle(this->winId());
+#else
+    this->setWindowTitle("Game");
+    ui->mac_spacer_1->changeSize(0, 0);
 #endif
 
     int f1 = QFontDatabase::addApplicationFont(QStringLiteral(":/assets/fonts/AdobeClean-Light.otf"));
@@ -23,10 +26,14 @@ PlayWindow::PlayWindow(Game::GameFilePointer game, NN::NeuralNetworkManagerPoint
     ui->timer_lbl->setStyleSheet(QStringLiteral("QLabel { color: #FFFFFF; font-family: 'Adobe Clean'; font-size: 20px; }"));
     ui->turn_lbl->setStyleSheet(QStringLiteral("QLabel { color: #FFFFFF; font-family: 'Segoe UI'; font-size: 20px; }"));
 
-#ifndef MACX
-    this->setWindowTitle("Game");
-    ui->mac_spacer_1->changeSize(0, 0);
-#endif
+    if(arduinoSerial && cameraInterface && !cameraInterface->getErrorState())
+    {
+        setGameMode(GameMode::WithBoard);
+    }
+    else
+    {
+        setGameMode(GameMode::SoftwareOnly);
+    }
 
     nn = nnm->getBestNNPerformer()->neuralNetwork;
 
@@ -76,14 +83,39 @@ void PlayWindow::resizeEvent(QResizeEvent *event)
     }
 }
 
+void PlayWindow::setGameMode(PlayWindow::GameMode mode)
+{
+    gameMode = mode;
+    if(gameMode == GameMode::WithBoard)
+    {
+        QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn1Press, this, &PlayWindow::nextClicked);
+        QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2Press, this, &PlayWindow::okClicked);
+        QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2LongPress, this, &PlayWindow::okLongPressed);
+        cameraErrorHandlingConnection = QObject::connect(this->cameraInterface.data(), &CameraAnalyzer::cameraError, this, [this]() {
+            QMessageBox msgBox;
+            msgBox.setText(tr("Error: Camera disconected."));
+            msgBox.exec();
+            this->setGameMode(GameMode::SoftwareOnly);
+        });
+    }
+    else
+    {
+        ui->console_label->setEnabled(false);
+    }
+}
+
 void PlayWindow::on_menu_btn_clicked()
 {
-    pm = new PlayMenu(false, true, adobeCleanLight, segoeUILight, this);
-    QObject::connect(pm, &PlayMenu::resumeGame, this, &PlayWindow::resumeGame);
-    pm->move(this->window()->rect().center() - pm->rect().center());
+    gameFile->setPlayTime(totalTime);
+    gameEngine->pauseGame();
     ui->menu_btn->setEnabled(false);
     ui->exit_btn->setEnabled(false);
     brdWidget->setEnabled(false);
+    pm = new PlayMenu(false, true, adobeCleanLight, segoeUILight, this);
+    QObject::connect(pm, &PlayMenu::resumeGame, this, &PlayWindow::resumeGame);
+    QObject::connect(pm, &PlayMenu::newGame, this, &PlayWindow::newGame);
+    QObject::connect(pm, &PlayMenu::quitGame, this, &PlayWindow::quitGame);
+    pm->move(this->window()->rect().center() - pm->rect().center());
     pm->show();
     pm->setFocus();
 }
@@ -94,11 +126,43 @@ void PlayWindow::on_exit_btn_clicked()
     close();
 }
 
+void PlayWindow::nextClicked()
+{
+    arduinoSerial->sendCellGroup({Game::Cell::fromNum(0), Game::Cell::fromNum(1), Game::Cell::fromNum(2), Game::Cell::fromNum(3), Game::Cell::fromNum(4), Game::Cell::fromNum(5), Game::Cell::fromNum(6)});
+}
+
+void PlayWindow::okClicked()
+{
+    arduinoSerial->setBlack();
+}
+
+void PlayWindow::okLongPressed()
+{
+    on_menu_btn_clicked();
+    QObject::disconnect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn1Press, this, &PlayWindow::nextClicked);
+    QObject::disconnect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2Press, this, &PlayWindow::okClicked);
+    QObject::disconnect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2LongPress, this, &PlayWindow::okLongPressed);
+    QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn1Press, pm, &PlayMenu::nextPressed);
+    QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2Press, pm, &PlayMenu::okPressed);
+}
+
 void PlayWindow::resumeGame()
 {
+    QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn1Press, this, &PlayWindow::nextClicked);
+    QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2Press, this, &PlayWindow::okClicked);
+    QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2LongPress, this, &PlayWindow::okLongPressed);
+    gameEngine->resumeGame();
     ui->menu_btn->setEnabled(true);
     ui->exit_btn->setEnabled(true);
     brdWidget->setEnabled(true);
+}
+
+void PlayWindow::quitGame()
+{
+    gameEngine->stopGame();
+    hide();
+    emit closingSignal();
+    this->deleteLater();
 }
 
 void PlayWindow::madeMove(PlayerMovePointer move, Game::BoardData board)
