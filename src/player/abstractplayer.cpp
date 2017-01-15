@@ -25,13 +25,14 @@ bool AbstractPlayer::isPaused()
     return paused;
 }
 
-void AbstractPlayer::startTurn(Game::BoardData boardData)
+void AbstractPlayer::startTurn(Game::BoardData boardData, bool paused)
 {
     mutex.lock();
     if(!executing)
     {
         board = Game::BoardPointer(new Game::Board(boardData));
         hasToBegin = true;
+        hasToPause = paused;
     }
     mutex.unlock();
 }

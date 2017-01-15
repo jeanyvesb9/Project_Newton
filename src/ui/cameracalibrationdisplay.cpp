@@ -141,6 +141,7 @@ void CameraCalibrationDisplay::cameraError(QString error)
         QMessageBox msgBox;
         msgBox.setText(error);
         msgBox.exec();
+        this->close();
     }
 }
 

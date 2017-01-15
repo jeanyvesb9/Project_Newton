@@ -3,20 +3,20 @@
 #include <Cocoa/Cocoa.h>
 #include <Appkit/AppKit.h>
 
-class CocoaInitializer::Private
+class AutoReleasePool::Private
 {
 public:
     NSAutoreleasePool *autoReleasePool;
 };
 
-CocoaInitializer::CocoaInitializer()
+AutoReleasePool::AutoReleasePool()
 {
-    p = new CocoaInitializer::Private();
+    p = new AutoReleasePool::Private();
     NSApplicationLoad();
     p->autoReleasePool = [[NSAutoreleasePool alloc] init];
 }
 
-CocoaInitializer::~CocoaInitializer()
+AutoReleasePool::~AutoReleasePool()
 {
     [p->autoReleasePool release];
     delete p;

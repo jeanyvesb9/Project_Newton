@@ -2,6 +2,7 @@
 #define PLAYWINDOW_H
 
 #include <QWidget>
+#include <QTimer>
 #include <QFontDatabase>
 
 #include "src/neuralNetwork/neuralnetworkmanager.h"
@@ -41,6 +42,8 @@ protected:
 
 private slots:
     void setGameMode(GameMode mode);
+    void handleCameraOutput(QVector<BoardPiece> rawVector);
+    void handleWrongManualPlayerMove();
 
     void on_menu_btn_clicked();
     void on_exit_btn_clicked();
@@ -61,6 +64,8 @@ signals:
     void closingSignal();
 
 private:
+    enum GameWithBoardState { InitialCalibration, ComputerPlaying, UserPlaying, ComputerShowingMoves, CheckingUserMoves, ShowingUserBrdWidgetMoves };
+
     Ui::PlayWindow *ui;
     GameMode gameMode;
     QFont adobeCleanLight;
@@ -79,8 +84,11 @@ private:
     NN::NeuralNetworkPointer nn;
 
     ArduinoSerialPointer arduinoSerial;
-    CameraAnalyzerPointer cameraInterface;
+    CameraAnalyzerPointer camera;
     QMetaObject::Connection cameraErrorHandlingConnection;
+    GameWithBoardState gameState;
+    Game::MovePointer auxMove;
+    Game::BoardPointer previousBoard;
 
     void setPlayerTurnTo(Player player);
 

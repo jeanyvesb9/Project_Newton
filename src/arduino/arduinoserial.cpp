@@ -34,6 +34,7 @@ void ArduinoSerial::sendMove(Game::BoardPointer board, Game::MovePointer move)
     QVector<Game::Cell> cells = board->getMovePathCells(move);
 
     data.append(0xE2);
+    data.append(move->cell.toCellNum());
     for(auto &cell : cells)
     {
         data.append(cell.toCellNum());

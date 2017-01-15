@@ -4,7 +4,7 @@
 PlayWindow::PlayWindow(Game::GameFilePointer game, NN::NeuralNetworkManagerPointer nnm, ArduinoSerialPointer arduinoSerial, CameraAnalyzerPointer cameraInterface, QWidget *parent) :
     QWidget(parent, Qt::Window),
     ui(new Ui::PlayWindow),
-    gameFile{game}, arduinoSerial{arduinoSerial}, cameraInterface{cameraInterface}, pm{nullptr}
+    gameFile{game}, arduinoSerial{arduinoSerial}, camera{cameraInterface}, pm{nullptr}
 {
     ui->setupUi(this);
 
@@ -25,15 +25,9 @@ PlayWindow::PlayWindow(Game::GameFilePointer game, NN::NeuralNetworkManagerPoint
     ui->sign_lbl->setFont(adobeCleanLight);
     ui->timer_lbl->setStyleSheet(QStringLiteral("QLabel { color: #FFFFFF; font-family: 'Adobe Clean'; font-size: 20px; }"));
     ui->turn_lbl->setStyleSheet(QStringLiteral("QLabel { color: #FFFFFF; font-family: 'Segoe UI'; font-size: 20px; }"));
+    ui->menuInfo_lbl->setStyleSheet(QStringLiteral("QLabel { color: #FFFFFF; font-family: 'Segoe UI'; font-size: 10px; }"));
 
-    if(arduinoSerial && cameraInterface && !cameraInterface->getErrorState())
-    {
-        setGameMode(GameMode::WithBoard);
-    }
-    else
-    {
-        setGameMode(GameMode::SoftwareOnly);
-    }
+
 
     nn = nnm->getBestNNPerformer()->neuralNetwork;
 
@@ -47,8 +41,16 @@ PlayWindow::PlayWindow(Game::GameFilePointer game, NN::NeuralNetworkManagerPoint
 
     manualPlayer = ManualPlayerPointer(new ManualPlayer(Game::Side::PlayerSide));
     nnPlayer = NeuralNetworkPlayerPointer(new NeuralNetworkPlayer(Game::Side::OpponentSide, nn, gameFile->getDifficulty()));
+    if(arduinoSerial && cameraInterface && !cameraInterface->getErrorState())
+    {
+        setGameMode(GameMode::WithBoard);
+    }
+    else
+    {
+        setGameMode(GameMode::SoftwareOnly);
+    }
     gameEngine = GameEnginePointer(new GameEngine(manualPlayer, nnPlayer, gameFile->getBoardData(), gameFile->getCurrentMoveNumber(),
-                                                  gameFile->getActivePlayer(), gameFile->getPlayTime(), GameEngine::TieValue::NoTie, this));
+                                                  gameFile->getActivePlayer(), gameFile->getPlayTime(), GameEngine::TieValue::NoTie, gameMode == GameMode::WithBoard, this));
     QObject::connect(gameEngine.data(), &GameEngine::madeMove, this, &PlayWindow::madeMove);
     QObject::connect(gameEngine.data(), &GameEngine::hasWon, this, &PlayWindow::gameFinished);
     QObject::connect(gameEngine.data(), &GameEngine::oneSecondTimerTick, this, &PlayWindow::totalTimerUpdate);
@@ -59,7 +61,10 @@ PlayWindow::PlayWindow(Game::GameFilePointer game, NN::NeuralNetworkManagerPoint
     ui->table_layout->addWidget(piWidget);
 
     brdWidget->setBoard(game->getBoardData());
-    setPlayerTurnTo(gameFile->getActivePlayer());
+    if(gameMode == GameMode::SoftwareOnly)
+    {
+        setPlayerTurnTo(gameFile->getActivePlayer());
+    }
 }
 
 PlayWindow::~PlayWindow()
@@ -88,20 +93,93 @@ void PlayWindow::setGameMode(PlayWindow::GameMode mode)
     gameMode = mode;
     if(gameMode == GameMode::WithBoard)
     {
+        gameState = GameWithBoardState::InitialCalibration;
+        ui->console_label->setVisible(true);
+        ui->menuInfo_lbl->setVisible(true);
+        ui->console_label->setText(tr("Before playing, you must calibrate the board! Put the correct pieces in each spot, following the pattern shown on screen. To keep track of kings, stack another piece of the same color on top of the one placed already in the designated spot. When you are finished, the camera will then validate your actions. DO NOT place any other object on top of the board, nor have your hand in front of the camera, as it would not be able to complete the board scan.\nPress the OK button on the board to continue."));
         QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn1Press, this, &PlayWindow::nextClicked);
         QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2Press, this, &PlayWindow::okClicked);
         QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2LongPress, this, &PlayWindow::okLongPressed);
-        cameraErrorHandlingConnection = QObject::connect(this->cameraInterface.data(), &CameraAnalyzer::cameraError, this, [this]() {
+        QObject::connect(this->camera.data(), &CameraAnalyzer::rawBoardVector, this, &PlayWindow::handleCameraOutput);
+        QObject::connect(this->manualPlayer.data(), &ManualPlayer::wrongMove, this, &PlayWindow::handleWrongManualPlayerMove);
+        cameraErrorHandlingConnection = QObject::connect(this->camera.data(), &CameraAnalyzer::cameraError, this, [this]() {
             QMessageBox msgBox;
             msgBox.setText(tr("Error: Camera disconected."));
             msgBox.exec();
+            camera.reset();
+            QObject::disconnect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn1Press, this, &PlayWindow::nextClicked);
+            QObject::disconnect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2Press, this, &PlayWindow::okClicked);
+            QObject::disconnect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2LongPress, this, &PlayWindow::okLongPressed);
+            QObject::disconnect(this->camera.data(), &CameraAnalyzer::rawBoardVector, this, &PlayWindow::handleCameraOutput);
+            QObject::disconnect(this->manualPlayer.data(), &ManualPlayer::wrongMove, this, &PlayWindow::handleWrongManualPlayerMove);
+            QObject::disconnect(cameraErrorHandlingConnection);
             this->setGameMode(GameMode::SoftwareOnly);
         });
     }
     else
     {
-        ui->console_label->setEnabled(false);
+        ui->console_label->setVisible(false);
+        ui->menuInfo_lbl->setVisible(false);
+        gameEngine->resumeGame();
     }
+}
+
+void PlayWindow::handleCameraOutput(QVector<BoardPiece> rawVector)
+{
+    if(gameState == GameWithBoardState::InitialCalibration)
+    {
+        if(convertBoardToBoardPieceVector(gameEngine->getBoard()) == rawVector)
+        {
+            previousBoard = gameEngine->getBoard();
+            setPlayerTurnTo(gameFile->getActivePlayer());
+            gameEngine->resumeGame();
+        }
+        else
+        {
+            ui->console_label->setText(tr("OOPS! The camera couldn't validate your actions, check the board and try again! If you are not successful after another attempt, you might need to adjust the camera parameters. Close this window and proceed to recalibrate.\nPut the correct pieces in each spot, following the pattern shown on screen. DO NOT place any other object on top of the board, nor have your hand in front of the camera, as it would not be able to complete the board scan.\nPress the OK button on the board to continue."));
+        }
+    }
+    else if(gameState == GameWithBoardState::ComputerPlaying)
+    {
+
+    }
+    else if(gameState == GameWithBoardState::ComputerShowingMoves)
+    {
+        if(convertBoardToBoardPieceVector(gameEngine->getBoard()) == rawVector)
+        {
+            setPlayerTurnTo(Player::Player1);
+        }
+        else
+        {
+            arduinoSerial->sendMove(previousBoard, auxMove);
+            ui->console_label->setText(tr("OOPS! The camera couldn't validate your actions, check the board and try again! If you are not successful after another attempt, you might need to adjust the camera parameters. Close this window and proceed to recalibrate.\nExecute the computer's move on the board, following the light patterns. If you are confused or made a mistake, use the screen as a reference. When you are done, the computer will proceed to validate your actions. Keep the board clear for the camera.\n\n Press OK when you have finished."));
+        }
+    }
+    else if(gameState == GameWithBoardState::UserPlaying)
+    {
+        QMetaObject::invokeMethod(manualPlayer.data(), "validateTurn", Qt::QueuedConnection, Q_ARG(QVector<BoardPiece>, rawVector));
+    }
+    else if(gameState == GameWithBoardState::CheckingUserMoves)
+    {
+
+    }
+    else if(gameState == GameWithBoardState::ShowingUserBrdWidgetMoves)
+    {
+        if(convertBoardToBoardPieceVector(gameEngine->getBoard()->executeMove(auxMove)) == rawVector)
+        {
+            QMetaObject::invokeMethod(manualPlayer.data(), "madeMove", Qt::QueuedConnection, Q_ARG(Game::MovePointer, auxMove));
+        }
+        else
+        {
+            arduinoSerial->sendMove(gameEngine->getBoard(), auxMove);
+            ui->console_label->setText(tr("OOPS! The camera couldn't validate your actions, check the board and try again! If you are not successful after another attempt, you might need to adjust the camera parameters. Close this window and proceed to recalibrate.\nExecute your move on the board, following the light patterns. If you are confused or made a mistake, use the screen as a reference. When you are done, the computer will proceed to validate your actions. Keep the board clear for the camera.\n\n Press OK when you have finished."));
+        }
+    }
+}
+
+void PlayWindow::handleWrongManualPlayerMove()
+{
+    ui->console_label->setText(tr("OOPS! The camera couldn't validate your actions, check the board and try again! If you are not successful after another attempt, you might need to adjust the camera parameters. Close this window and proceed to recalibrate.\nMake a move! Remember to take the jump if it's available. When you are done, the computer will proceed to validate your actions. Keep the board clear for the camera.\n\n Press OK when you have finished."));
 }
 
 void PlayWindow::on_menu_btn_clicked()
@@ -111,10 +189,18 @@ void PlayWindow::on_menu_btn_clicked()
     ui->menu_btn->setEnabled(false);
     ui->exit_btn->setEnabled(false);
     brdWidget->setEnabled(false);
-    pm = new PlayMenu(false, true, adobeCleanLight, segoeUILight, this);
+    pm = new PlayMenu(gameMode == GameMode::WithBoard, adobeCleanLight, segoeUILight, this);
     QObject::connect(pm, &PlayMenu::resumeGame, this, &PlayWindow::resumeGame);
     QObject::connect(pm, &PlayMenu::newGame, this, &PlayWindow::newGame);
     QObject::connect(pm, &PlayMenu::quitGame, this, &PlayWindow::quitGame);
+    if(gameMode == GameMode::WithBoard)
+    {
+        QObject::disconnect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn1Press, this, &PlayWindow::nextClicked);
+        QObject::disconnect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2Press, this, &PlayWindow::okClicked);
+        QObject::disconnect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2LongPress, this, &PlayWindow::okLongPressed);
+        QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn1Press, pm, &PlayMenu::nextPressed);
+        QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2Press, pm, &PlayMenu::okPressed);
+    }
     pm->move(this->window()->rect().center() - pm->rect().center());
     pm->show();
     pm->setFocus();
@@ -128,22 +214,69 @@ void PlayWindow::on_exit_btn_clicked()
 
 void PlayWindow::nextClicked()
 {
-    arduinoSerial->sendCellGroup({Game::Cell::fromNum(0), Game::Cell::fromNum(1), Game::Cell::fromNum(2), Game::Cell::fromNum(3), Game::Cell::fromNum(4), Game::Cell::fromNum(5), Game::Cell::fromNum(6)});
+    if(gameState == GameWithBoardState::InitialCalibration)
+    {
+
+    }
+    else if(gameState == GameWithBoardState::ComputerPlaying)
+    {
+
+    }
+    else if(gameState == GameWithBoardState::ComputerShowingMoves)
+    {
+
+    }
+    else if(gameState == GameWithBoardState::UserPlaying)
+    {
+
+    }
+    else if(gameState == GameWithBoardState::CheckingUserMoves)
+    {
+
+    }
+    else if(gameState == GameWithBoardState::ShowingUserBrdWidgetMoves)
+    {
+
+    }
 }
 
 void PlayWindow::okClicked()
 {
-    arduinoSerial->setBlack();
+    if(gameState == GameWithBoardState::InitialCalibration)
+    {
+        camera->captureSingleRawBoard();
+    }
+    else if(gameState == GameWithBoardState::ComputerPlaying)
+    {
+
+    }
+    else if(gameState == GameWithBoardState::ComputerShowingMoves)
+    {
+        arduinoSerial->setBlack();
+        QTimer::singleShot(200, [this]() {
+            this->camera->captureSingleRawBoard();
+        });
+    }
+    else if(gameState == GameWithBoardState::UserPlaying)
+    {
+        camera->captureSingleRawBoard();
+    }
+    else if(gameState == GameWithBoardState::CheckingUserMoves)
+    {
+
+    }
+    else if(gameState == GameWithBoardState::ShowingUserBrdWidgetMoves)
+    {
+        arduinoSerial->setBlack();
+        QTimer::singleShot(200, [this]() {
+            this->camera->captureSingleRawBoard();
+        });
+    }
 }
 
 void PlayWindow::okLongPressed()
 {
     on_menu_btn_clicked();
-    QObject::disconnect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn1Press, this, &PlayWindow::nextClicked);
-    QObject::disconnect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2Press, this, &PlayWindow::okClicked);
-    QObject::disconnect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2LongPress, this, &PlayWindow::okLongPressed);
-    QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn1Press, pm, &PlayMenu::nextPressed);
-    QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2Press, pm, &PlayMenu::okPressed);
 }
 
 void PlayWindow::resumeGame()
@@ -151,7 +284,10 @@ void PlayWindow::resumeGame()
     QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn1Press, this, &PlayWindow::nextClicked);
     QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2Press, this, &PlayWindow::okClicked);
     QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2LongPress, this, &PlayWindow::okLongPressed);
-    gameEngine->resumeGame();
+    if(gameState == GameWithBoardState::UserPlaying || gameState == GameWithBoardState::ComputerPlaying)
+    {
+        gameEngine->resumeGame();
+    }
     ui->menu_btn->setEnabled(true);
     ui->exit_btn->setEnabled(true);
     brdWidget->setEnabled(true);
@@ -173,41 +309,41 @@ void PlayWindow::madeMove(PlayerMovePointer move, Game::BoardData board)
     brdWidget->setBoard(board);
     if(gameEngine->getCurrentPlayer() != Player::None)
     {
-        setPlayerTurnTo(move->player == Player::Player1 ? Player::Player2 : Player::Player1);
+        if(gameMode == GameMode::SoftwareOnly || gameState == GameWithBoardState::UserPlaying)
+        {
+            setPlayerTurnTo(move->player == Player::Player1 ? Player::Player2 : Player::Player1);
+            previousBoard = gameEngine->getBoard();
+        }
+        else
+        {
+            gameState = GameWithBoardState::ComputerShowingMoves;
+            ui->console_label->setText(tr("Execute the computer's move on the board, following the light patterns. If you are confused or made a mistake, use the screen as a reference. When you are done, the computer will proceed to validate your actions. Keep the board clear for the camera.\n\n Press OK when you have finished."));
+            auxMove = move->move;
+            arduinoSerial->sendMove(previousBoard, move->move);
+        }
     }
 }
 
 void PlayWindow::selectedMove(Game::MovePointer move)
 {
-    Game::BoardData bd = gameEngine->getBoard()->executeMove(move)->getBoardData();
-    brdWidget->setBoard(bd);
-
-    QVector<BoardPiece> valData;
-    for(auto &p : bd)
+    if(gameMode == GameMode::WithBoard)
     {
-        switch(p)
-        {
-        case Game::Piece::Empty:
-            valData <<BoardPiece::Empty;
-            break;
-        case Game::Piece::Player:
-        case Game::Piece::King:
-            valData << BoardPiece::PlayerPiece;
-            break;
-        case Game::Piece::OpPlayer:
-        case Game::Piece::OpKing:
-            valData << BoardPiece::OpPlayerPiece;
-            break;
-        }
+        auxMove = move;
+        gameState = GameWithBoardState::ShowingUserBrdWidgetMoves;
+        ui->console_label->setText(tr("Execute your move on the board, following the light patterns. If you are confused or made a mistake, use the screen as a reference. When you are done, the computer will proceed to validate your actions. Keep the board clear for the camera.\n\n Press OK when you have finished."));
+        arduinoSerial->sendMove(gameEngine->getBoard(), move);
     }
-
-    QMetaObject::invokeMethod(manualPlayer.data(), "validateTurn", Qt::QueuedConnection, Q_ARG(QVector<BoardPiece>, valData));
+    else
+    {
+        QMetaObject::invokeMethod(manualPlayer.data(), "madeMove", Qt::QueuedConnection, Q_ARG(Game::MovePointer, move));
+    }
 }
 
 void PlayWindow::gameFinished(Player winner)
 {
     gameFile->finishGame(winner);
     ui->turn_lbl->setText(tr("The game has finished"));
+    ui->console_label->setText(tr("The game has finished! Start another from the home screen, or from the option in the menu."));
     ui->timer_lbl->setText(QString::number(gameFile->getCurrentMoveNumber() - 1) + tr(" moves"));
 }
 
@@ -248,9 +384,19 @@ void PlayWindow::setPlayerTurnTo(Player player)
     {
         brdWidget->displayAvailableMoves(gameEngine->getBoard(), gameEngine->getBoard()->getAllMoves(Game::Side::PlayerSide));
         ui->turn_lbl->setText(tr("It's your turn"));
+        if(gameMode == GameMode::WithBoard)
+        {
+            ui->console_label->setText("Make a move! Remember to take the jump if it's available. When you are done, the computer will proceed to validate your actions. Keep the board clear for the camera.\n\n Press OK when you have finished.");
+            gameState = GameWithBoardState::UserPlaying;
+        }
     }
-    else
+    else if(player == Player::Player2)
     {
         ui->turn_lbl->setText(tr("It's the computer's turn"));
+        if(gameMode == GameMode::WithBoard)
+        {
+            ui->console_label->setText("The computer is making it's move. Please wait...");
+            gameState = GameWithBoardState::ComputerPlaying;
+        }
     }
 }

@@ -69,6 +69,7 @@ void CameraSelector::on_cameraList_activated(int index)
     else
     {
         ui->resolutionList->setEnabled(true);
+        ui->cameraDisplay->setText(tr("Loading..."));
 
         if(!hadPreviousCameraOnInitialization)
         {
@@ -93,6 +94,7 @@ void CameraSelector::on_cameraList_activated(int index)
             QMessageBox msgBox;
             msgBox.setText(errorString);
             msgBox.exec();
+            cameraAnalyzer->reset();
             this->close();
         });
     }

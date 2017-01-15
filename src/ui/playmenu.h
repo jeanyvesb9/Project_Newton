@@ -15,7 +15,7 @@ class PlayMenu : public QWidget
 {
     Q_OBJECT
 public:
-    explicit PlayMenu(bool cameraConnected, bool boardConnected, QFont adobeCleanLight, QFont segoeUILight, QWidget *parent = 0);
+    explicit PlayMenu(bool cameraConnected, QFont adobeCleanLight, QFont segoeUILight, QWidget *parent = 0);
     ~PlayMenu();
 
     enum State { NormalMenuState, NewGameState, CameraCalibrationState, HelpState, QuitState, NewGameLoadState };

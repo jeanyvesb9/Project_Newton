@@ -179,7 +179,7 @@
      <item>
       <widget class="QLabel" name="turn_lbl">
        <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:20px; color:#ffffff;&quot;&gt;It's your turn&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:20px; color:#ffffff;&quot;&gt;Board Calibration&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
      </item>
@@ -282,6 +282,13 @@ QPushButton:pressed {
          </property>
          <property name="text">
           <string>Exit</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="menuInfo_lbl">
+         <property name="text">
+          <string>Hold OK to open menu</string>
          </property>
         </widget>
        </item>

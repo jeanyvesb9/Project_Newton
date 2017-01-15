@@ -1,8 +1,8 @@
 #include "playmenu.h"
 
-PlayMenu::PlayMenu(bool cameraConnected, bool boardConnected, QFont adobeCleanLight, QFont segoeUILight, QWidget *parent) :
+PlayMenu::PlayMenu(bool cameraConnected, QFont adobeCleanLight, QFont segoeUILight, QWidget *parent) :
     QWidget(parent),
-    state{State::NormalMenuState}, index{0}, cameraConnected{cameraConnected}, boardConnected{boardConnected},
+    state{State::NormalMenuState}, index{0}, cameraConnected{cameraConnected},
     adobeCleanLight{adobeCleanLight}, segoeUILight{segoeUILight}
 {
     setMouseTracking(true);

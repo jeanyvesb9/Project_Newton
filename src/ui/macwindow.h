@@ -1,11 +1,11 @@
 #ifndef MACWINDOW_H
 #define MACWINDOW_H
 
-class CocoaInitializer
+class AutoReleasePool
 {
 public:
-    CocoaInitializer();
-    ~CocoaInitializer();
+    AutoReleasePool();
+    ~AutoReleasePool();
 private:
     class Private;
     Private *p;

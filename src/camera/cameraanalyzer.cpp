@@ -27,7 +27,7 @@ QVector<BoardPiece> convertBoardToBoardPieceVector(Game::BoardPointer board)
 
 CameraAnalyzer::CameraAnalyzer(Camera::CameraDeviceInfo cam, QObject *parent)
     : QObject(parent),
-      timerId{0}, framerate{5}, errorState{false}, camera{new Camera::CameraInterface(cam)}, cameraInfo{cam}
+      timerId{0}, framerate{5}, errorState{false}, camera{new Camera::CameraInterface(cam)}, cameraInfo{cam}, boardCaptureRequest{false}
 {
     QObject::connect(camera, &Camera::CameraInterface::cameraError, this, [this](QString error) {
         errorState = true;
@@ -139,7 +139,7 @@ void CameraAnalyzer::processImage(QImage img)
     }
 
     //Cells scan
-    rawBoard.clear();
+    QVector<BoardPiece> rawBoard;
     for(int i = 0; i < 8; i++)
     {
         for(int j = 0; j < 8; j++)
@@ -168,6 +168,10 @@ void CameraAnalyzer::processImage(QImage img)
     emit rawFromCamera(lastRawFromCamera);
     emit pieceOverlay(lastPieceOverlay);
     emit edgeView(lastEdgeView);
+    if(boardCaptureRequest)
+    {
+        emit rawBoardVector(rawBoard);
+    }
 }
 
 bool CameraAnalyzer::getErrorState() const
@@ -293,6 +297,15 @@ bool CameraAnalyzer::stopCapture()
         return true;
     }
     return false;
+}
+
+void CameraAnalyzer::captureSingleRawBoard()
+{
+    boardCaptureRequest = true;
+    if(!errorState && !timerId)
+    {
+        camera->captureImage();
+    }
 }
 
 void CameraAnalyzer::setCannyHysterisisUThold(int value)

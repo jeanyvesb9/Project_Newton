@@ -55,6 +55,7 @@ private slots:
 
     void on_calibrateCamera_clicked();
 
+    void cameraCalibrationDisplayClosed();
     void cameraLocalErrorHandler(QString error);
     void cameraRemoteErrorHandler();
 
@@ -78,7 +79,7 @@ private:
     PlayWindow *pw;
 
 #ifdef MACOS
-    CocoaInitializer cocoaInit;
+    AutoReleasePool gcReleasePool;
 #endif
 };
 

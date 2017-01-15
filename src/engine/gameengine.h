@@ -28,7 +28,7 @@ public:
     explicit GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2, int tie = 100, QObject *parent = 0);
     explicit GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2,
                         Game::BoardData board, int turnNumber, Player currentPlayer, quint64 playtime,
-                        int tie = TieValue::NoTie,
+                        int tie = TieValue::NoTie, bool startPaused = false,
                         QObject *parent = 0);
 
     ~GameEngine();

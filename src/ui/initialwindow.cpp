@@ -3,7 +3,7 @@
 
 InitialWindow::InitialWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::InitialWindow), ccdw{nullptr}, nnt{nullptr}
+    ui(new Ui::InitialWindow), ccdw{nullptr}, nnt{nullptr}, pw{nullptr}
 {
     ui->setupUi(this);
 
@@ -47,7 +47,12 @@ void InitialWindow::on_connectBoard_clicked()
         QMessageBox msgBox;
         msgBox.setText(tr("Error: Couldn't open the port"));
         msgBox.exec();
+        ui->gameMode->setText(tr("Game Mode: Software Only"));
         return;
+    }
+    if(camera)
+    {
+        ui->gameMode->setText(tr("Game Mode: With Board"));
     }
     ui->boardList->setEnabled(false);
     ui->connectBoard->setEnabled(false);
@@ -65,25 +70,19 @@ void InitialWindow::on_selectCamera_clicked()
     CameraSelector *cs = new CameraSelector(&camera, this);
     cs->exec();
     cs->deleteLater();
-    if(!camera.isNull())
+    if(camera)
     {
         if(camera.data() != prevCam)
         {
+            if(arduinoSerial)
+            {
+                ui->gameMode->setText(tr("Game Mode: With Board"));
+            }
             ui->cameraConnectionStatus->setText(tr("Connected to \"") + camera->getCameraDeviceInfo().name + QStringLiteral("\""));
             ui->calibrateCamera->setEnabled(true);
             ccdw = new CameraCalibrationDisplay(camera, true, true, this);
             ccdw->show();
-            QObject::connect(ccdw, &CameraCalibrationDisplay::closed, this, [this]() {
-                ccdw->deleteLater();
-                if(!camera->getErrorState())
-                {
-                    if(!pw)
-                    {
-                        camera->stopCapture();
-                        this->cameraErrorHandlingConnection = QObject::connect(camera.data(), &CameraAnalyzer::cameraError, this, &InitialWindow::cameraLocalErrorHandler);
-                    }
-                }
-            });
+            QObject::connect(ccdw, &CameraCalibrationDisplay::closed, this, &InitialWindow::cameraCalibrationDisplayClosed);
         }
         else
         {
@@ -92,6 +91,7 @@ void InitialWindow::on_selectCamera_clicked()
     }
     else
     {
+        ui->gameMode->setText(tr("Game Mode: Software Only"));
         ui->cameraConnectionStatus->setText(QStringLiteral("<html><head/><body><p><span style=\" color:#0000ff;\">") + tr("Not Connected") + QStringLiteral("</span></p></body></html>"));
         ui->calibrateCamera->setEnabled(false);
     }
@@ -99,22 +99,31 @@ void InitialWindow::on_selectCamera_clicked()
 
 void InitialWindow::on_calibrateCamera_clicked()
 {
-    if(!camera.isNull() && !ccdw)
+    if(!ccdw)
     {
         camera->startCapture();
         ccdw = new CameraCalibrationDisplay(camera, false, true, this);
         ccdw->show();
-        QObject::connect(ccdw, &CameraCalibrationDisplay::closed, this, [this]() {
-            ccdw->deleteLater();
-            if(!camera->getErrorState())
-            {
-                if(!pw)
-                {
-                    camera->stopCapture();
-                    this->cameraErrorHandlingConnection = QObject::connect(camera.data(), &CameraAnalyzer::cameraError, this, &InitialWindow::cameraLocalErrorHandler);
-                }
-            }
-        });
+        QObject::connect(ccdw, &CameraCalibrationDisplay::closed, this, &InitialWindow::cameraCalibrationDisplayClosed);
+    }
+}
+
+void InitialWindow::cameraCalibrationDisplayClosed()
+{
+    ccdw->deleteLater();
+    if(!camera->getErrorState())
+    {
+        camera->stopCapture();
+        if(!pw)
+        {
+            this->cameraErrorHandlingConnection = QObject::connect(camera.data(), &CameraAnalyzer::cameraError, this, &InitialWindow::cameraLocalErrorHandler);
+        }
+    }
+    else
+    {
+        ui->gameMode->setText(tr("Game Mode: Software Only"));
+        ui->cameraConnectionStatus->setText(QStringLiteral("<html><head/><body><p><span style=\" color:#0000ff;\">") + tr("Not Connected") + QStringLiteral("</span></p></body></html>"));
+        ui->calibrateCamera->setEnabled(false);
     }
 }
 
@@ -131,6 +140,7 @@ void InitialWindow::cameraRemoteErrorHandler()
     ui->cameraConnectionStatus->setText(QStringLiteral("<html><head/><body><p><span style=\" color:#0000ff;\">") + tr("Not Connected") + QStringLiteral("</span></p></body></html>"));
     ui->calibrateCamera->setEnabled(false);
     this->camera.reset();
+    ui->gameMode->setText(tr("Game Mode: Software Only"));
 }
 
 void InitialWindow::on_openNN_clicked()
@@ -309,6 +319,7 @@ void InitialWindow::handlePlayWindowClosure()
     }
     show();
     pw->deleteLater();
+    pw = nullptr;
 }
 
 void InitialWindow::newGameFromPlayWindow()

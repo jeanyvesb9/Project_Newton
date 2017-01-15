@@ -1,5 +1,7 @@
 #include "camerainterface.h"
 
+#include <QApplication>
+
 #import <Cocoa/Cocoa.h>
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
@@ -40,7 +42,7 @@
 {
     if(_interface)
     {
-        emit _interface->cameraError(QString::fromNSString([notification.object localizedName]));
+        emit _interface->cameraError(QString::fromNSString([notification.object localizedName]) + QApplication::translate("CameraCalibrationDisplay", " disconnected."));
     }
 }
 
@@ -81,44 +83,6 @@ Camera::CameraInterface::CameraInterface(Camera::CameraDeviceInfo cam, QObject *
     {
         [p->captureSession addInput:input];
         p->captureSession.sessionPreset = AVCaptureSessionPresetPhoto;
-
-        const ResolutionInfoList resList = getCameraResolutions();
-        bool flag = false;
-        const Resolution target(640, 480);
-        for(const auto &r : resList)
-        {
-            if(r.res == target)
-            {
-                flag = true;
-                NSError *error = nil;
-                if([p->activeDevice lockForConfiguration:&error])
-                {
-                    p->activeDevice.activeFormat = p->resolutions[r.id];
-                    currentResolution = r;
-                    [p->activeDevice unlockForConfiguration];
-                    break;
-                }
-                else
-                {
-                    qDebug() <<"ERROR";//TODO: RAISE EXCEPTION
-                }
-            }
-        }
-        if(!flag)
-        {
-            NSError *error = nil;
-            if([p->activeDevice lockForConfiguration:&error])
-            {
-                const ResolutionInfo &res = resList.at(0);
-                p->activeDevice.activeFormat = p->resolutions[res.id];
-                currentResolution = res;
-                [p->activeDevice unlockForConfiguration];
-            }
-            else
-            {
-                //TODO: RAISE EXCEPTION
-            }
-        }
     }
     else
     {
@@ -137,6 +101,45 @@ Camera::CameraInterface::CameraInterface(Camera::CameraDeviceInfo cam, QObject *
     }
 
     [p->captureSession startRunning];
+
+     const ResolutionInfoList resList = getCameraResolutions();
+     bool flag = false;
+     const Resolution target(640, 480);
+     for(const auto &r : resList)
+     {
+         if(r.res == target)
+         {
+             flag = true;
+             NSError *error = nil;
+             if([p->activeDevice lockForConfiguration:&error])
+             {
+                 p->activeDevice.activeFormat = p->resolutions[r.id];
+                 currentResolution = r;
+                 [p->activeDevice unlockForConfiguration];
+                 break;
+             }
+             else
+             {
+                 //TODO: RAISE EXCEPTION
+             }
+         }
+     }
+     if(!flag)
+     {
+         NSError *error = nil;
+         if([p->activeDevice lockForConfiguration:&error])
+         {
+             const ResolutionInfo &res = resList.at(0);
+             p->activeDevice.activeFormat = p->resolutions[res.id];
+             currentResolution = res;
+             [p->activeDevice unlockForConfiguration];
+         }
+         else
+         {
+             //TODO: RAISE EXCEPTION
+         }
+     }
+
     emit hasInitialized();
 }
 

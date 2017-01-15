@@ -16,6 +16,7 @@ public:
 
 public slots:
     Q_INVOKABLE void validateTurn(QVector<BoardPiece> rawBoardData);
+    Q_INVOKABLE void madeMove(Game::MovePointer move);
 
 signals:
     void wrongMove();

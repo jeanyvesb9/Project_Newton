@@ -26,7 +26,7 @@ signals:
     void oneSecondtimerTick(int time);
 
 public slots:
-    Q_INVOKABLE void startTurn(Game::BoardData boardData);
+    Q_INVOKABLE void startTurn(Game::BoardData boardData, bool pause);
 
     void launchBackgroundTask();
     void pause();

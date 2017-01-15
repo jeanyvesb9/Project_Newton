@@ -28,6 +28,14 @@ void ManualPlayer::validateTurn(QVector<BoardPiece> rawBoardData)
     mutex.unlock();
 }
 
+void ManualPlayer::madeMove(Game::MovePointer move)
+{
+    mutex.lock();
+    this->move = move;
+    hasFinished = true;
+    mutex.unlock();
+}
+
 void ManualPlayer::executeTurn()
 {
     hasFinished = false;

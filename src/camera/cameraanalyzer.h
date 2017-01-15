@@ -44,9 +44,12 @@ signals:
     void pieceOverlay(QImage img);
     void edgeView(QImage img);
 
+    void rawBoardVector(QVector<BoardPiece> rawBoard);
+
 public slots:
     bool startCapture();
     bool stopCapture();
+    void captureSingleRawBoard();
     void setFramerate(int value);
     void setTrimPoints(QPoint ul, QPoint ur, QPoint bl, QPoint br);
     void setCameraResolution(const Camera::ResolutionInfo res);
@@ -67,11 +70,11 @@ private:
 
     Camera::CameraInterface *camera;
     Camera::CameraDeviceInfo cameraInfo;
+    bool boardCaptureRequest;
 
     QImage lastRawFromCamera;
     QImage lastPieceOverlay;
     QImage lastEdgeView;
-    QVector<BoardPiece> rawBoard;
 
     QPoint ul;
     QPoint ur;
