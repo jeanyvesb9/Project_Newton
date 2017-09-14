@@ -2,23 +2,23 @@
 
 using namespace NN;
 
-TrainingEngine::TrainingEngine(NeuralNetworkManagerPointer manager, unsigned int depth, QObject *parent)
+TrainingEngine::TrainingEngine(NeuralNetworkManagerPointer manager, int depth, QObject *parent)
     : QObject(parent),
     status{Status::Stopped}, depth{depth}, manager{manager}
 {
 
 }
 
-void TrainingEngine::startTraining(int iterations, int maxMoves)
+void TrainingEngine::startTraining(int iterations, int maxMoves, int searchDepth)
 {
     if(status == Status::Stopped)
     {
         this->iteration = 0;
         this->totalIterations = iterations;
         this->moves = 0;
-        this->maxMoves = maxMoves;
+        this->tieMaxMoves = maxMoves;
         this->status = Status::Running;
-
+        this->depth = searchDepth;
         timer.start();
         newIteration();
     }
@@ -55,7 +55,7 @@ void TrainingEngine::newIteration()
         offspring->parent = originalNNs->at(i)->id;
         offspring->id = maxId + i; //TEMPORAL VALUE FOR SCORE ACCOUNTING - FIXED IN MANAGER
 
-        trainingData->newNNs.append(offspring);
+        trainingData->newNNs <<offspring;
     }
 
     i = 0;
@@ -89,22 +89,22 @@ void TrainingEngine::startNewGame()
     player1 = i < 15 ? originalNNs->at(i) : trainingData->newNNs.at(i % 15);
     player2 = opponent < 15 ? originalNNs->at(opponent) : trainingData->newNNs.at(opponent % 15);
 
-    nnp1 = NeuralNetworkPlayerPointer(new NeuralNetworkPlayer(Game::Side::PlayerSide, player1->neuralNetwork, 4));
-    nnp2 = NeuralNetworkPlayerPointer(new NeuralNetworkPlayer(Game::Side::OpponentSide, player2->neuralNetwork, 4));
+    nnp1 = new NeuralNetworkPlayer(Game::Side::PlayerSide, player1->neuralNetwork, depth);
+    nnp2 = new NeuralNetworkPlayer(Game::Side::OpponentSide, player2->neuralNetwork, depth);
 
-    engine = GameEnginePointer(new GameEngine(nnp1, nnp2, tieValue));
+    engine = GameEnginePointer(new GameEngine(nnp1, nnp2, tieMaxMoves));
     QObject::connect(engine.data(), &GameEngine::madeMove, this, &TrainingEngine::madeMove);
     QObject::connect(engine.data(), &GameEngine::hasWon, this, &TrainingEngine::gameWon);
     QObject::connect(engine.data(), &GameEngine::hasTied, this, &TrainingEngine::hasTied);
 
-    emit statusUpdate(this->status, this->engine->getBoard()->getBoardData(), this->iteration, this->totalIterations, this->moves, this->maxMoves, this->getGames());
+    emit statusUpdate(this->status, this->engine->getBoard()->getBoardData(), this->iteration, this->totalIterations, this->moves, this->tieMaxMoves, this->getGames());
 }
 
 void TrainingEngine::madeMove(PlayerMovePointer move, Game::BoardData board)
 {
     Q_UNUSED(move)
     moves++;
-    emit statusUpdate(this->status, board, this->iteration, this->totalIterations, this->moves, this->maxMoves, this->getGames());
+    emit statusUpdate(this->status, board, this->iteration, this->totalIterations, this->moves, this->tieMaxMoves, this->getGames());
 }
 
 void TrainingEngine::gameWon(Player winner)
@@ -129,11 +129,6 @@ void TrainingEngine::hasTied()
     nextTrain();
 }
 
-void TrainingEngine::setTieValue(int value)
-{
-    tieValue = value;
-}
-
 Status TrainingEngine::getStatus() const
 {
     return status;
@@ -144,10 +139,7 @@ void TrainingEngine::nextTrain()
     QObject::disconnect(engine.data(), &GameEngine::madeMove, this, &TrainingEngine::madeMove);
     QObject::disconnect(engine.data(), &GameEngine::hasWon, this, &TrainingEngine::gameWon);
     QObject::disconnect(engine.data(), &GameEngine::hasTied, this, &TrainingEngine::hasTied);
-    nnp1.reset();
-    nnp2.reset();
 
-    engine->deleteLater();
     engine.reset();
 
     if(j < 5)
@@ -220,7 +212,7 @@ void TrainingEngine::hasFinishedIteration()
             trainingData->bestPerforming = n;
         }
     }
-    if(trainingData.isNull())
+    if(trainingData->bestPerforming.isNull())
     {
         for(auto &n : trainingData->newNNs)
         {

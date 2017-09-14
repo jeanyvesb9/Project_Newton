@@ -93,6 +93,26 @@ macx: {
         src/ui/macwindow.mm \
         src/camera/macos_camerainterface.mm
 }
+win32: {
+
+    LIBS += -L$$PWD/../../../../../libs/videoInput/lib/ -lvideoInput
+
+    INCLUDEPATH += $$PWD/../../../../../libs/videoInput/include
+    DEPENDPATH += $$PWD/../../../../../libs/videoInput/include
+    PRE_TARGETDEPS += $$PWD/../../../../../libs/videoInput/lib/videoInput.lib
+
+    win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../libs/opencv/build/x64/vc14/lib/ -lopencv_world330
+    else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../libs/opencv/build/x64/vc14/lib/ -lopencv_world330d
+
+    INCLUDEPATH += $$PWD/../../../../../libs/opencv/build/include
+    DEPENDPATH += $$PWD/../../../../../libs/opencv/build/include
+
+    win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../../../../libs/opencv/build/x64/vc14/lib/libopencv_world330.a
+    else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../../../../libs/opencv/build/x64/vc14/lib/libopencv_world330d.a
+    else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../../../../libs/opencv/build/x64/vc14/lib/opencv_world330.lib
+    else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../../../../libs/opencv/build/x64/vc14/lib/opencv_world330d.lib
+
+}
 
 DISTFILES += \
     assets/text/help.txt

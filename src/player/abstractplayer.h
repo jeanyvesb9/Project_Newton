@@ -27,10 +27,11 @@ signals:
 
 public slots:
     Q_INVOKABLE void startTurn(Game::BoardData boardData, bool pause);
+    Q_INVOKABLE void startTurn(Game::BoardData boardData);
 
     void launchBackgroundTask();
-    void pause();
-    void resume();
+    Q_INVOKABLE void pause();
+    Q_INVOKABLE void resume();
 
     Q_INVOKABLE void stop();
 

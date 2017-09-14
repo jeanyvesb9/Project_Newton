@@ -33,13 +33,13 @@ void ArduinoSerial::sendMove(Game::BoardPointer board, Game::MovePointer move)
     QByteArray data;
     QVector<Game::Cell> cells = board->getMovePathCells(move);
 
-    data.append(0xE2);
+    data.append(static_cast<const unsigned char>(0xE2));
     data.append(move->cell.toCellNum());
     for(auto &cell : cells)
     {
         data.append(cell.toCellNum());
     }
-    data.append(0xFF);
+    data.append(static_cast<const unsigned char>(0xFF));
 
     serial->write(data);
 }
@@ -48,12 +48,12 @@ void ArduinoSerial::sendCellGroup(QVector<Game::Cell> cells)
 {
     QByteArray data;
 
-    data.append(0xE1);
+    data.append(static_cast<const unsigned char>(0xE1));
     for(auto &cell : cells)
     {
         data.append(cell.toCellNum());
     }
-    data.append(0xFF);
+    data.append(static_cast<const unsigned char>(0xFF));
 
     serial->write(data);
 }
@@ -62,8 +62,8 @@ void ArduinoSerial::setBlack()
 {
     QByteArray data;
 
-    data.append(0xE0);
-    data.append(0xFF);
+    data.append(static_cast<const unsigned char>(0xE0));
+    data.append(static_cast<const unsigned char>(0xFF));
 
     serial->write(data);
 }

@@ -90,7 +90,7 @@ void CameraAnalyzer::processImage(QImage img)
     //Original Image Rotation
     cv::Mat originalImg;
     cv::Mat rotationMatrix = cv::getRotationMatrix2D(cv::Point2f(img.width() / 2, img.height() / 2), 180, 1);
-    cv::warpAffine(QImage2Mat(img), originalImg, rotationMatrix, originalImg.size());
+    cv::warpAffine(QImage2Mat(img), originalImg, rotationMatrix, cv::Size(img.width(), img.height()));
 
     //Trimming:
     cv::Point2f inputPts[4] = { cv::Point2f(ul.x(), ul.y()),
@@ -121,7 +121,7 @@ void CameraAnalyzer::processImage(QImage img)
     {
         for(int j = 0; j < 9; j++)
         {
-            cornerPoints[{i, j}] = QPoint(i == 400 ? 399 : i * 50, j == 400 ? 399 : j * 50);;
+            cornerPoints[{i, j}] = QPoint(i == 400 ? 399 : i * 50, j == 400 ? 399 : j * 50);
         }
     }
 
@@ -401,6 +401,15 @@ cv::Mat CameraAnalyzer::QImage2Mat_Ref(QImage &img, bool swap)
         case QImage::Format_ARGB32:
         case QImage::Format_ARGB32_Premultiplied:
             return qimage_to_mat_ref(img, CV_8UC4);
+        case QImage::Format_RGBA8888:
+        {
+            auto result = qimage_to_mat_ref(img, CV_8UC4);
+            if(swap)
+            {
+                cv::cvtColor(result, result, CV_RGB2BGR);
+            }
+            return result;
+        }
 
         default:
             break;

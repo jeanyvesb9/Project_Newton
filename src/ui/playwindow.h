@@ -78,8 +78,8 @@ private:
     Game::GameFilePointer gameFile;
 
     GameEnginePointer gameEngine;
-    NeuralNetworkPlayerPointer nnPlayer;
-    ManualPlayerPointer manualPlayer;
+    NeuralNetworkPlayer *nnPlayer;
+    ManualPlayer *manualPlayer;
 
     NN::NeuralNetworkPointer nn;
 

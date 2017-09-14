@@ -3,7 +3,7 @@
 
 #include <random>
 #include <cmath>
-#include <tgmath.h>
+//#include <tgmath.h>
 
 #include <QObject>
 #include <QList>

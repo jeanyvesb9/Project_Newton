@@ -39,8 +39,8 @@ PlayWindow::PlayWindow(Game::GameFilePointer game, NN::NeuralNetworkManagerPoint
 
     totalTimerUpdate(gameFile->getPlayTime());
 
-    manualPlayer = ManualPlayerPointer(new ManualPlayer(Game::Side::PlayerSide));
-    nnPlayer = NeuralNetworkPlayerPointer(new NeuralNetworkPlayer(Game::Side::OpponentSide, nn, gameFile->getDifficulty()));
+    manualPlayer = new ManualPlayer(Game::Side::PlayerSide);
+    nnPlayer = new NeuralNetworkPlayer(Game::Side::OpponentSide, nn, gameFile->getDifficulty());
     if(arduinoSerial && cameraInterface && !cameraInterface->getErrorState())
     {
         setGameMode(GameMode::WithBoard);
@@ -101,7 +101,7 @@ void PlayWindow::setGameMode(PlayWindow::GameMode mode)
         QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2Press, this, &PlayWindow::okClicked);
         QObject::connect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2LongPress, this, &PlayWindow::okLongPressed);
         QObject::connect(this->camera.data(), &CameraAnalyzer::rawBoardVector, this, &PlayWindow::handleCameraOutput);
-        QObject::connect(this->manualPlayer.data(), &ManualPlayer::wrongMove, this, &PlayWindow::handleWrongManualPlayerMove);
+        QObject::connect(this->manualPlayer, &ManualPlayer::wrongMove, this, &PlayWindow::handleWrongManualPlayerMove);
         cameraErrorHandlingConnection = QObject::connect(this->camera.data(), &CameraAnalyzer::cameraError, this, [this]() {
             QMessageBox msgBox;
             msgBox.setText(tr("Error: Camera disconected."));
@@ -111,7 +111,7 @@ void PlayWindow::setGameMode(PlayWindow::GameMode mode)
             QObject::disconnect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2Press, this, &PlayWindow::okClicked);
             QObject::disconnect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn2LongPress, this, &PlayWindow::okLongPressed);
             QObject::disconnect(this->camera.data(), &CameraAnalyzer::rawBoardVector, this, &PlayWindow::handleCameraOutput);
-            QObject::disconnect(this->manualPlayer.data(), &ManualPlayer::wrongMove, this, &PlayWindow::handleWrongManualPlayerMove);
+            QObject::disconnect(this->manualPlayer, &ManualPlayer::wrongMove, this, &PlayWindow::handleWrongManualPlayerMove);
             QObject::disconnect(cameraErrorHandlingConnection);
             this->setGameMode(GameMode::SoftwareOnly);
         });
@@ -120,7 +120,7 @@ void PlayWindow::setGameMode(PlayWindow::GameMode mode)
     {
         ui->console_label->setVisible(false);
         ui->menuInfo_lbl->setVisible(false);
-        gameEngine->resumeGame();
+        //gameEngine->resumeGame();
     }
 }
 
@@ -157,7 +157,7 @@ void PlayWindow::handleCameraOutput(QVector<BoardPiece> rawVector)
     }
     else if(gameState == GameWithBoardState::UserPlaying)
     {
-        QMetaObject::invokeMethod(manualPlayer.data(), "validateTurn", Qt::QueuedConnection, Q_ARG(QVector<BoardPiece>, rawVector));
+        QMetaObject::invokeMethod(manualPlayer, "validateTurn", Qt::QueuedConnection, Q_ARG(QVector<BoardPiece>, rawVector));
     }
     else if(gameState == GameWithBoardState::CheckingUserMoves)
     {
@@ -167,7 +167,7 @@ void PlayWindow::handleCameraOutput(QVector<BoardPiece> rawVector)
     {
         if(convertBoardToBoardPieceVector(gameEngine->getBoard()->executeMove(auxMove)) == rawVector)
         {
-            QMetaObject::invokeMethod(manualPlayer.data(), "madeMove", Qt::QueuedConnection, Q_ARG(Game::MovePointer, auxMove));
+            QMetaObject::invokeMethod(manualPlayer, "madeMove", Qt::QueuedConnection, Q_ARG(Game::MovePointer, auxMove));
         }
         else
         {
@@ -335,7 +335,7 @@ void PlayWindow::selectedMove(Game::MovePointer move)
     }
     else
     {
-        QMetaObject::invokeMethod(manualPlayer.data(), "madeMove", Qt::QueuedConnection, Q_ARG(Game::MovePointer, move));
+        QMetaObject::invokeMethod(manualPlayer, "madeMove", Qt::QueuedConnection, Q_ARG(Game::MovePointer, move));
     }
 }
 

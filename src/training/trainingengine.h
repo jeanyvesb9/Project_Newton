@@ -23,10 +23,9 @@ class TrainingEngine : public QObject
 {
     Q_OBJECT
 public:
-    TrainingEngine(NeuralNetworkManagerPointer manager, unsigned int depth, QObject *parent = 0);
+    TrainingEngine(NeuralNetworkManagerPointer manager, int depth, QObject *parent = 0);
 
     Status getStatus() const;
-    void setTieValue(int value);
 
 signals:
     void statusUpdate(Status statusUpdate, Game::BoardData board, int iteration, int totalIterations, int moves, int maxMoves, int games);
@@ -35,7 +34,7 @@ signals:
     void hasCanceled(int iterationsCompleted);
 
 public slots:
-    void startTraining(int iterations, int maxMoves);
+    void startTraining(int iterations, int maxMoves, int searchDepth);
     void cancelTraining();
 
 private slots:
@@ -49,10 +48,9 @@ private:
     int iteration;
     int totalIterations;
     int moves;
-    int maxMoves;
 
-    unsigned int depth;
-    int tieValue;
+    int depth;
+    int tieMaxMoves;
 
     NeuralNetworkManagerPointer manager;
     QVector<NNContainerPointer> *originalNNs;
@@ -61,8 +59,8 @@ private:
     NNContainerPointer player1;
     NNContainerPointer player2;
     GameEnginePointer engine;
-    NeuralNetworkPlayerPointer nnp1;
-    NeuralNetworkPlayerPointer nnp2;
+    NeuralNetworkPlayer *nnp1;
+    NeuralNetworkPlayer *nnp2;
 
     int i = 0;
     int j = 0;
@@ -80,6 +78,6 @@ private:
 using TrainingEnginePointer = QSharedPointer<TrainingEngine>;
 }
 
-Q_DECLARE_METATYPE(NN::Status);
+Q_DECLARE_METATYPE(NN::Status)
 
 #endif // TRAININGENGINE_H

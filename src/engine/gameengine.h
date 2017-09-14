@@ -25,8 +25,10 @@ class GameEngine : public QObject
 {
     Q_OBJECT
 public:
-    explicit GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2, int tie = 100, QObject *parent = 0);
-    explicit GameEngine(AbstractPlayerPointer p1, AbstractPlayerPointer p2,
+    enum TieValue { NoTie = -1 };
+
+    explicit GameEngine(AbstractPlayer *p1, AbstractPlayer *p2, int tie = 100, QObject *parent = 0);
+    explicit GameEngine(AbstractPlayer *p1, AbstractPlayer *p2,
                         Game::BoardData board, int turnNumber, Player currentPlayer, quint64 playtime,
                         int tie = TieValue::NoTie, bool startPaused = false,
                         QObject *parent = 0);
@@ -47,8 +49,6 @@ public:
 
     int getPlayTime() const;
     Player getWinningPlayer() const;
-
-    enum TieValue { NoTie = -1 };
 
 signals:
     void madeMove(PlayerMovePointer move, Game::BoardData board);
@@ -76,9 +76,9 @@ private:
     int tieValue;
     int turnNumber;
 
-    AbstractPlayerPointer player1;
+    AbstractPlayer *player1;
     QThread *player1_thread;
-    AbstractPlayerPointer player2;
+    AbstractPlayer *player2;
     QThread *player2_thread;
 
     Player currentPlayer;

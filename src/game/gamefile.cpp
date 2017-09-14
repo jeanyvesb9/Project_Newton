@@ -70,6 +70,8 @@ Player Game::GameFile::getWinnerPlayer() const
         return Player::Player1;
     case GameStatus::Player2Won:
         return Player::Player2;
+    default:
+        return Player::None;
     }
 }
 

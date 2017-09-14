@@ -145,7 +145,7 @@ void InitialWindow::cameraRemoteErrorHandler()
 
 void InitialWindow::on_openNN_clicked()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), QDir::homePath(), "Neural Network Family (*.nnf)");
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), QString(), "Neural Network Family (*.nnf)");
     if(!fileName.isEmpty())
     {
         if(!nnm.isNull() && nnm->isValid())
@@ -171,7 +171,7 @@ void InitialWindow::on_openNN_clicked()
 
 void InitialWindow::on_createNN_clicked()
 {
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"), QDir::homePath(), "Neural Network Family (*.nnf)");
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"), QString(), "Neural Network Family (*.nnf)");
     if(!fileName.isEmpty())
     {
         if(!nnm.isNull() && nnm->isValid())
@@ -216,7 +216,7 @@ void InitialWindow::on_trainNN_clicked()
 
 void InitialWindow::on_openGame_clicked()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), QDir::homePath(), "Checkers Game File (*.cg)");
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), QString(), "Checkers Game File (*.cg)");
     if(!fileName.isEmpty())
     {
         if(!gameFile.isNull() && gameFile->isValid())

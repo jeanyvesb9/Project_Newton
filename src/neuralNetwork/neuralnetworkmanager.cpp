@@ -19,7 +19,9 @@ NeuralNetworkManager::NeuralNetworkManager(QString file, QObject *parent)
     }
 
     if(loadInMemory())
+    {
         this->flags |= NNManagerFlags::valid;
+    }
     else
     {
         //TODO: RAISE EXCEPTION
@@ -110,9 +112,10 @@ bool NeuralNetworkManager::addTrainingIteration(TrainingDataPointer trainingData
     }
 
     query.clear();
+    db.transaction();
+    query.prepare(QStringLiteral("INSERT INTO games (Iteration, Player1, Player2, Score) VALUES (:iteration, :p1, :p2, :score)"));
     for(auto game : trainingData->games)
     {
-        query.prepare(QStringLiteral("INSERT INTO games (Iteration, Player1, Player2, Score) VALUES (:iteration, :p1, :p2, :score)"));
         query.bindValue(QStringLiteral(":iteration"), trainingIteration);
         query.bindValue(QStringLiteral(":p1"), game->nn1->id);
         query.bindValue(QStringLiteral(":p2"), game->nn2->id);
@@ -124,8 +127,9 @@ bool NeuralNetworkManager::addTrainingIteration(TrainingDataPointer trainingData
             return false;
         }
 
-        query.clear();
+        query.finish();
     }
+    db.commit();
 
     for(int i = 0; i < activeNeuralNetworks.size(); i++)
     {
@@ -332,6 +336,9 @@ bool NeuralNetworkManager::saveNNToDB(NNContainerPointer ptr)
     ptr->id = query.value(0).toULongLong();
 
     query.clear();
+
+    db.transaction();
+    query.prepare(QStringLiteral("INSERT INTO weights VALUES (:network, :layer, :neuron, :neuronWeight, :value, :sigma)"));
     NNTopologyDataPointer nnData = ptr->neuralNetwork->getDataStruct();
     for(int i = 0; i < nnData->weights.size(); i++) //layer
     {
@@ -339,7 +346,6 @@ bool NeuralNetworkManager::saveNNToDB(NNContainerPointer ptr)
         {
             for(int k = 0; k < nnData->weights.at(i).at(j).size(); k++) //NeuronData
             {
-                query.prepare(QStringLiteral("INSERT INTO weights VALUES (:network, :layer, :neuron, :neuronWeight, :value, :sigma)"));
                 query.bindValue(QStringLiteral(":network"), ptr->id);
                 query.bindValue(QStringLiteral(":layer"), i + 1);
                 query.bindValue(QStringLiteral(":neuron"), j + 1);
@@ -348,10 +354,11 @@ bool NeuralNetworkManager::saveNNToDB(NNContainerPointer ptr)
                 query.bindValue(QStringLiteral(":sigma"), longDoubleToQString(nnData->weights.at(i).at(j).at(k).sigma));
 
                 query.exec();
-                query.clear();
+                query.finish();
             }
         }
     }
+    db.commit();
 
     return true;
 }

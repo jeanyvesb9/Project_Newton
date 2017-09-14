@@ -23,6 +23,8 @@ NNTraining::NNTraining(NN::NeuralNetworkManagerPointer ptr, QWidget *parent) :
     ui->tie->setMinimum(2);
     ui->tie->setMaximum(10000);
     ui->tie->setValue(100);
+    ui->depth->setMinimum(1);
+    ui->depth->setValue(4);
 
     setUiStop();
 }
@@ -40,14 +42,14 @@ void NNTraining::on_startBtn_clicked()
 {
     ui->iterations->setEnabled(false);
     ui->tie->setEnabled(false);
+    ui->depth->setEnabled(false);
     ui->startBtn->setEnabled(false);
     ui->stopBtn->setEnabled(true);
     ui->closeBtn->setEnabled(false);
     ui->progressBar->setValue(0);
     ui->progressBar->setVisible(true);
 
-    te->setTieValue(ui->tie->value());
-    te->startTraining(ui->iterations->value(), ui->tie->value());
+    te->startTraining(ui->iterations->value(), ui->tie->value(), ui->depth->value());
 }
 
 void NNTraining::on_stopBtn_clicked()

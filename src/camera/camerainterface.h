@@ -6,6 +6,12 @@
 #include <QImage>
 #include <QDebug>
 
+#ifdef WIN32
+#include <videoInput/videoInput.h>
+#include <opencv/cv.hpp>
+#endif
+
+
 namespace Camera
 {
 
@@ -35,20 +41,26 @@ struct ResolutionInfo
     inline bool operator==(const ResolutionInfo &other) const { return id == other.id; }
 private:
     quint64 id;
-    ResolutionInfo(Resolution res, QString apendedDescription, quint64 id) : res{res}, id{id} { description = QString::number(res.x) + QStringLiteral("x") + QString::number(res.y) + QStringLiteral(" - ") + apendedDescription; }
+    ResolutionInfo(Resolution res, QString apendedDescription, quint64 id) : res{res}, id{id} { description = QString::number(res.x) + QStringLiteral("x") + QString::number(res.y) + (apendedDescription.isEmpty() ? QStringLiteral("") : QStringLiteral(" - ") + apendedDescription); }
     friend class CameraInterface;
 };
 using ResolutionInfoList = QVector<ResolutionInfo>;
 
 struct CameraDeviceInfo
 {
+    CameraDeviceInfo() = default;
     QString name;
     inline const QVariant getId() const { return id; }
 private:
+    CameraDeviceInfo(QString name, QVariant id) : name{name}, id{id} {;}
     QVariant id;
     friend class CameraInterface;
 };
 using CameraDeviceInfoList = QVector<CameraDeviceInfo>;
+
+#ifdef WIN32
+class CamStopCallback;
+#endif
 
 class CameraInterface : public QObject
 {
@@ -80,14 +92,32 @@ private:
     Private *p;
 
 #endif
-#ifdef WINDOWS
+#ifdef WIN32
+    ResolutionInfoList resolutionList;
+    CamStopCallback *callback;
+    DeviceSettings deviceSettings;
+    ReadSetting readSetting;
+    IplImage *frame;
 
+    void startDevice();
+    QImage IplImageToQImage(const IplImage *iplImage) const;
 #endif
 #ifdef LINUX
 
 #endif
 
 };
+
+#ifdef WIN32
+class CamStopCallback : public IStopCallback
+{
+public:
+    CamStopCallback(CameraInterface *interface);
+    void Invoke(StopCallbackEvent::CallbackEvent callbackEvent) override;
+private:
+    CameraInterface *interface;
+};
+#endif
 
 }
 #endif // CAMERAINTERFACE_H

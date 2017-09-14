@@ -33,6 +33,6 @@ private:
 };
 using ManualPlayerPointer = QSharedPointer<ManualPlayer>;
 
-Q_DECLARE_METATYPE(QVector<BoardPiece>);
+Q_DECLARE_METATYPE(QVector<BoardPiece>)
 
 #endif // MANUALPLAYER_H

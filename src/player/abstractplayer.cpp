@@ -37,6 +37,11 @@ void AbstractPlayer::startTurn(Game::BoardData boardData, bool paused)
     mutex.unlock();
 }
 
+void AbstractPlayer::startTurn(Game::BoardData boardData)
+{
+    startTurn(boardData, false);
+}
+
 void AbstractPlayer::launchBackgroundTask()
 {
     while(true)
@@ -51,7 +56,6 @@ void AbstractPlayer::launchBackgroundTask()
                 killTimer(timerId);
                 timerId = 0;
             }
-            moveToThread(qApp->thread());
             emit hasStopped();
             return;
         }
