@@ -290,6 +290,7 @@ Game::GameFilePointer Game::GameFile::createNewGame(QString file, QString name, 
     ptr->activePlayer = static_cast<Player>(uni(rng));
     ptr->board = Game::Board::defaultBoard()->getBoardData();
     ptr->currentMoveNumber = 1;
+    ptr->gameStatus = GameStatus::Playing;
 
     query.prepare(QStringLiteral("INSERT INTO generalData(PlayerName, DateCreated, GameTime, Difficulty, ActivePlayer, Board, GameStatus) VALUES (:name, :dateCreated, 0, :difficulty, :activePlayer, :board, :gameStatus);"));
     query.bindValue(QStringLiteral(":name"), ptr->playerName);

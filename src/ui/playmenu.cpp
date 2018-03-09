@@ -168,6 +168,7 @@ void PlayMenu::okPressed()
         {
             state = State::NewGameLoadState;
             emit newGame();
+            deleteLater();
         }
         else
         {

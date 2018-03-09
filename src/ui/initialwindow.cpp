@@ -42,7 +42,8 @@ void InitialWindow::on_connectBoard_clicked()
     try
     {
         arduinoSerial = ArduinoSerialPointer(new ArduinoSerial(portList[ui->boardList->currentIndex()]));
-    } catch (...)
+    }
+    catch (...)
     {
         QMessageBox msgBox;
         msgBox.setText(tr("Error: Couldn't open the port"));
@@ -296,10 +297,9 @@ void InitialWindow::on_playGame_clicked()
         this->cameraErrorHandlingConnection = QObject::connect(camera.data(), &CameraAnalyzer::cameraError, this, &InitialWindow::cameraRemoteErrorHandler);
     }
     QObject::connect(pw, &PlayWindow::closingSignal, this, &InitialWindow::handlePlayWindowClosure);
-    QObject::connect(pw, &PlayWindow::newGame, this, &InitialWindow::newGameFromPlayWindow);
 }
 
-void InitialWindow::handlePlayWindowClosure()
+void InitialWindow::handlePlayWindowClosure(bool newGame)
 {
     brdWidget->setBoard(gameFile->getBoardData());
     if(gameFile->hasFinished())
@@ -317,25 +317,26 @@ void InitialWindow::handlePlayWindowClosure()
             camera->stopCapture();
         }
     }
-    show();
+
+    bool isMax = pw->isMaximized();
+    bool isFullscreen = pw->isFullScreen();
+    int w = pw->width();
+    int h = pw->height();
+    int x = pw->x();
+    int y = pw->y();
+
     pw->deleteLater();
     pw = nullptr;
+    if(newGame)
+    {
+        newGameFromPlayWindow(isMax, isFullscreen, w, h, x, y);
+        return;
+    }
+    show();
 }
 
-void InitialWindow::newGameFromPlayWindow()
+void InitialWindow::newGameFromPlayWindow(bool isMax, bool isFullscreen, int w, int h, int x, int y)
 {
-    QObject::disconnect(cameraErrorHandlingConnection);
-    if(!camera->getErrorState())
-    {
-        if(ccdw)
-        {
-            ccdw->setErrorHandlingResponsibility(true);
-        }
-        else
-        {
-            this->cameraErrorHandlingConnection = QObject::connect(camera.data(), &CameraAnalyzer::cameraError, this, &InitialWindow::cameraLocalErrorHandler);
-        }
-    }
 
     QFileInfo origFile(gameFile->getFileName());
     QDir folder = origFile.dir();
@@ -370,14 +371,12 @@ void InitialWindow::newGameFromPlayWindow()
     QString playerName = gameFile->getPlayerName();
     quint8 difficulty = gameFile->getDifficulty();
 
-    QObject::disconnect(pw, &PlayWindow::closingSignal, this, &InitialWindow::handlePlayWindowClosure);
     gameFile->saveAndClose();
     gameFile.reset();
     gameFile = Game::GameFile::createNewGame(newFileName, playerName, difficulty);
     if(!gameFile->isValid())
     {
         show();
-        pw->close();
         QMessageBox msgBox;
         msgBox.setText(tr("Error: Could not create file."));
         msgBox.exec();
@@ -391,30 +390,30 @@ void InitialWindow::newGameFromPlayWindow()
         ui->playGame->setEnabled(true);
         brdWidget->setBoard(gameFile->getBoardData());
 
-        PlayWindow *npw = new PlayWindow(gameFile, nnm, arduinoSerial, camera, this);
-        npw->show();
-        if(pw->isMaximized())
+        pw = new PlayWindow(gameFile, nnm, arduinoSerial, camera, this);
+        if(isMax)
         {
-            npw->showMaximized();
+            pw->showMaximized();
         }
-        else if(pw->isFullScreen())
+        else if(isFullscreen)
         {
-            npw->showFullScreen();
+            pw->showFullScreen();
         }
         else
         {
-            npw->resize(pw->width(), pw->height());
-            npw->move(pw->x(), pw->y());
+            pw->resize(w, h);
+            pw->move(x, y);
         }
-
-        QObject::connect(npw, &PlayWindow::closingSignal, this, &InitialWindow::handlePlayWindowClosure);
-        QObject::connect(npw, &PlayWindow::newGame, this, &InitialWindow::newGameFromPlayWindow);
+        QObject::connect(pw, &PlayWindow::closingSignal, this, &InitialWindow::handlePlayWindowClosure);
+        if(ccdw)
+        {
+            ccdw->setErrorHandlingResponsibility(true);
+        }
         QObject::disconnect(cameraErrorHandlingConnection);
         if(!camera->getErrorState())
         {
             this->cameraErrorHandlingConnection = QObject::connect(camera.data(), &CameraAnalyzer::cameraError, this, &InitialWindow::cameraRemoteErrorHandler);
         }
-        pw->quitGame();
-        pw = npw;
+        pw->show();
     }
 }

@@ -132,14 +132,14 @@
      <item>
       <widget class="QLabel" name="title_lbl">
        <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:55px; color:#ffffff;&quot;&gt;Checkers&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:55px; color:#ffffff;&quot;&gt;Damas&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QLabel" name="subtitle_lbl">
        <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:21px; color:#eeeeee;&quot;&gt;Artificial Learning Neural Network Algorithm with Genetic Evolution&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:21px; color:#eeeeee;&quot;&gt;Inteligencia Artificial: Algoritmo de Redes Neuronales con Evolución Genética&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="wordWrap">
         <bool>true</bool>
@@ -149,7 +149,7 @@
      <item>
       <widget class="QLabel" name="sign_lbl">
        <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:15px; color:#eeeeee;&quot;&gt;Jean Yves Beaucamp - 6ºB - Colegio San José de Quilmes&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:15px; color:#eeeeee;&quot;&gt;Jean Yves Beaucamp - Buenos Aires Mini Maker Faire 2018&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="wordWrap">
         <bool>true</bool>

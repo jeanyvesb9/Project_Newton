@@ -90,7 +90,12 @@ void CameraAnalyzer::processImage(QImage img)
     //Original Image Rotation
     cv::Mat originalImg;
     cv::Mat rotationMatrix = cv::getRotationMatrix2D(cv::Point2f(img.width() / 2, img.height() / 2), 180, 1);
-    cv::warpAffine(QImage2Mat(img), originalImg, rotationMatrix, cv::Size(img.width(), img.height()));
+    cv::Mat m = QImage2Mat(img);
+    if(m.empty())
+    {
+        return;
+    }
+    cv::warpAffine(m, originalImg, rotationMatrix, cv::Size(img.width(), img.height()));
 
     //Trimming:
     cv::Point2f inputPts[4] = { cv::Point2f(ul.x(), ul.y()),
@@ -340,7 +345,8 @@ inline QImage mat_to_qimage_ref(cv::Mat &mat, QImage::Format format)
 
 inline cv::Mat qimage_to_mat_ref(QImage &img, int format)
 {
-    return cv::Mat(img.height(), img.width(), format, img.bits(), img.bytesPerLine());
+    cv::Mat m = cv::Mat(img.height(), img.width(), format, img.bits(), img.bytesPerLine());
+    return m;
 }
 
 }
@@ -380,40 +386,56 @@ QImage CameraAnalyzer::Mat2QImage(const cv::Mat &mat, bool swap)
 
 cv::Mat CameraAnalyzer::QImage2Mat_Ref(QImage &img, bool swap)
 {
-    if(!img.isNull())
+    try
     {
-        switch(img.format())
+        if(!img.isNull())
         {
-        case QImage::Format_RGB888:
-        {
-            auto result = qimage_to_mat_ref(img, CV_8UC3);
-            if(swap)
+            if(img.allGray())
+                return cv::Mat();
+            switch(img.format())
             {
-                cv::cvtColor(result, result, CV_RGB2BGR);
-            }
-            return result;
-        }
-
-        case QImage::Format_Indexed8:
-            return qimage_to_mat_ref(img, CV_8U);
-
-        case QImage::Format_RGB32:
-        case QImage::Format_ARGB32:
-        case QImage::Format_ARGB32_Premultiplied:
-            return qimage_to_mat_ref(img, CV_8UC4);
-        case QImage::Format_RGBA8888:
-        {
-            auto result = qimage_to_mat_ref(img, CV_8UC4);
-            if(swap)
+            case QImage::Format_RGB888:
             {
-                cv::cvtColor(result, result, CV_RGB2BGR);
+                auto result = qimage_to_mat_ref(img, CV_8UC3);
+                if(swap)
+                {
+                    cv::cvtColor(result, result, CV_RGB2BGR);
+                }
+                return result;
             }
-            return result;
-        }
 
-        default:
-            break;
+            case QImage::Format_Indexed8:
+                return qimage_to_mat_ref(img, CV_8U);
+
+            case QImage::Format_RGB32:
+            case QImage::Format_ARGB32:
+            case QImage::Format_ARGB32_Premultiplied:
+                return qimage_to_mat_ref(img, CV_8UC4);
+            case QImage::Format_RGBA8888:
+            {
+                auto result = qimage_to_mat_ref(img, CV_8UC4);
+                if(swap)
+                {
+                    try
+                    {
+                        cv::cvtColor(result, result, CV_RGB2BGR);
+                    }
+                    catch (...)
+                    {
+                        return cv::Mat();
+                    }
+                }
+                return result;
+            }
+
+            default:
+                break;
+            }
         }
+    }
+    catch (...)
+    {
+        return cv::Mat();
     }
 
     return cv::Mat();

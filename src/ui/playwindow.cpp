@@ -4,7 +4,7 @@
 PlayWindow::PlayWindow(Game::GameFilePointer game, NN::NeuralNetworkManagerPointer nnm, ArduinoSerialPointer arduinoSerial, CameraAnalyzerPointer cameraInterface, QWidget *parent) :
     QWidget(parent, Qt::Window),
     ui(new Ui::PlayWindow),
-    gameFile{game}, arduinoSerial{arduinoSerial}, camera{cameraInterface}, pm{nullptr}
+    gameFile{game}, arduinoSerial{arduinoSerial}, camera{cameraInterface}, pm{nullptr}, newGame{false}
 {
     ui->setupUi(this);
 
@@ -75,8 +75,12 @@ PlayWindow::~PlayWindow()
 void PlayWindow::closeEvent(QCloseEvent *event)
 {
     gameEngine->stopGame();
+    if(gameMode == GameMode::WithBoard)
+    {
+        arduinoSerial->setBlack();
+    }
     Q_UNUSED(event);
-    emit closingSignal();
+    emit closingSignal(newGame);
 }
 
 void PlayWindow::resizeEvent(QResizeEvent *event)
@@ -191,8 +195,11 @@ void PlayWindow::on_menu_btn_clicked()
     brdWidget->setEnabled(false);
     pm = new PlayMenu(gameMode == GameMode::WithBoard, adobeCleanLight, segoeUILight, this);
     QObject::connect(pm, &PlayMenu::resumeGame, this, &PlayWindow::resumeGame);
-    QObject::connect(pm, &PlayMenu::newGame, this, &PlayWindow::newGame);
-    QObject::connect(pm, &PlayMenu::quitGame, this, &PlayWindow::quitGame);
+    QObject::connect(pm, &PlayMenu::newGame, [this](){
+        newGame = true;
+        on_exit_btn_clicked();
+    });
+    QObject::connect(pm, &PlayMenu::quitGame, this, &PlayWindow::on_exit_btn_clicked);
     if(gameMode == GameMode::WithBoard)
     {
         QObject::disconnect(this->arduinoSerial.data(), &ArduinoSerial::gotBtn1Press, this, &PlayWindow::nextClicked);
@@ -291,14 +298,6 @@ void PlayWindow::resumeGame()
     ui->menu_btn->setEnabled(true);
     ui->exit_btn->setEnabled(true);
     brdWidget->setEnabled(true);
-}
-
-void PlayWindow::quitGame()
-{
-    gameEngine->stopGame();
-    hide();
-    emit closingSignal();
-    this->deleteLater();
 }
 
 void PlayWindow::madeMove(PlayerMovePointer move, Game::BoardData board)

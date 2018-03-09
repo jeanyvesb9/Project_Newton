@@ -33,9 +33,6 @@ public:
 
     enum GameMode { SoftwareOnly, WithBoard };
 
-public slots:
-    void quitGame();
-
 protected:
     void closeEvent(QCloseEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
@@ -60,8 +57,7 @@ private slots:
     void totalTimerUpdate(int time);
 
 signals:
-    void newGame();
-    void closingSignal();
+    void closingSignal(bool newGame = false);
 
 private:
     enum GameWithBoardState { InitialCalibration, ComputerPlaying, UserPlaying, ComputerShowingMoves, CheckingUserMoves, ShowingUserBrdWidgetMoves };
@@ -76,6 +72,7 @@ private:
     PlayInfoTable *piWidget;
 
     Game::GameFilePointer gameFile;
+    bool newGame;
 
     GameEnginePointer gameEngine;
     NeuralNetworkPlayer *nnPlayer;

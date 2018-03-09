@@ -40,8 +40,7 @@ public:
     ~InitialWindow();
 
 public slots:
-    void handlePlayWindowClosure();
-    void newGameFromPlayWindow();
+    void handlePlayWindowClosure(bool newGame);
 
 private slots:
     void on_connectBoard_clicked();
@@ -77,6 +76,8 @@ private:
     Game::GameFilePointer gameFile;
 
     PlayWindow *pw;
+
+    void newGameFromPlayWindow(bool isMax, bool isFullscreen, int w, int h, int x, int y);
 
 #ifdef MACOS
     AutoReleasePool gcReleasePool;

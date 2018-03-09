@@ -250,8 +250,8 @@ void readButtons() {
   //bool btn2 = !(PINH & 0b00010000);
 
   //NANO:
-  bool btn1 = !(PINC & 0b00010000);
-  bool btn2 = !(PINC & 0b00100000);
+  bool btn1 = !(PINC & 0b00001000);
+  bool btn2 = !(PINC & 0b00010000);
   
 
   if(btn1 == previousDebounceArray[0]) {
@@ -335,8 +335,8 @@ void setup() {
   //PORTH |= 0b00011000;
   
   //NANO:
-  DDRC &= 0b11001111;
-  PORTC |=0b00110000;
+  DDRC &= 0b11100111;
+  PORTC |=0b00011000;
   
   //pinMode(SW0, INPUT_PULLUP);
   //pinMode(SW1, INPUT_PULLUP);
